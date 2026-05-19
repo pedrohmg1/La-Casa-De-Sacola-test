@@ -21,6 +21,27 @@ import {
 
 const STORAGE_PREFIX = "lcs-perfil";
 
+// Mapeamento de DDD para os Estados Brasileiros
+const dddMap = {
+  "11": "SP", "12": "SP", "13": "SP", "14": "SP", "15": "SP", "16": "SP", "17": "SP", "18": "SP", "19": "SP",
+  "21": "RJ", "22": "RJ", "24": "RJ", "27": "ES", "28": "ES",
+  "31": "MG", "32": "MG", "33": "MG", "34": "MG", "35": "MG", "37": "MG", "38": "MG",
+  "41": "PR", "42": "PR", "43": "PR", "44": "PR", "45": "PR", "46": "PR",
+  "47": "SC", "48": "SC", "49": "SC",
+  "51": "RS", "53": "RS", "54": "RS", "55": "RS",
+  "61": "DF", "62": "GO", "64": "GO", "63": "TO",
+  "65": "MT", "66": "MT", "67": "MS",
+  "68": "AC", "69": "RO",
+  "71": "BA", "73": "BA", "74": "BA", "75": "BA", "77": "BA",
+  "79": "SE", "81": "PE", "87": "PE",
+  "82": "AL", "83": "PB", "84": "RN", "85": "CE", "88": "CE",
+  "86": "PI", "89": "PI",
+  "91": "PA", "93": "PA", "94": "PA",
+  "92": "AM", "97": "AM",
+  "95": "RR", "96": "AP",
+  "98": "MA", "99": "MA"
+};
+
 export default function PerfilPage() {
   const router = useRouter();
   const [carregando, setCarregando] = useState(true);
@@ -55,7 +76,7 @@ export default function PerfilPage() {
       const perfilLocal = dadosSalvos ? JSON.parse(dadosSalvos) : null;
       const { data: usuarioBanco } = await supabase
         .from("usuario")
-        .select("nome_usu")
+        .select("nome_usu, telefone")
         .eq("uuid_usu", user.id)
         .maybeSingle();
 
@@ -67,7 +88,7 @@ export default function PerfilPage() {
           user.email?.split("@")[0] ||
           "Seu perfil",
         email: perfilLocal?.email || user.email || "",
-        telefone: perfilLocal?.telefone || "",
+        telefone: usuarioBanco?.telefone || perfilLocal?.telefone || "",
       });
 
       setCarregando(false);
@@ -85,6 +106,12 @@ export default function PerfilPage() {
     if (apenasNumeros.length <= 10) return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 6)}-${apenasNumeros.slice(6)}`;
     
     return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7, 11)}`;
+  };
+
+  const obterEstado = (telefone) => {
+    if (!telefone) return "";
+    const ddd = telefone.replace(/\D/g, "").slice(0, 2);
+    return ddd.length === 2 ? dddMap[ddd] || "DDD Inválido" : "";
   };
 
   const handleChange = (field) => (event) => {
@@ -141,6 +168,7 @@ export default function PerfilPage() {
             uuid_usu: user?.id,
             nome_usu: nomeLimpo,
             email_usu: payload.email,
+            telefone: telefoneLimpo, // Alteração: Adicionado o telefone na query
           },
           { onConflict: "uuid_usu" }
         ),
@@ -271,7 +299,20 @@ export default function PerfilPage() {
                     </label>
                     <label className="block">
                       <span className="block text-xs font-black uppercase tracking-widest text-[#7b867b] mb-2">Telefone</span>
-                      <input type="tel" value={dadosConta.telefone} onChange={handleChange("telefone")} className="w-full rounded-2xl border border-[#ded7c7] bg-[#fbfaf6] px-4 py-3 outline-none focus:border-[#A8DCAB] transition" placeholder="(11) 99999-9999" />
+                      <input 
+                        type="tel" 
+                        value={dadosConta.telefone} 
+                        onChange={handleChange("telefone")} 
+                        maxLength="15" 
+                        className="w-full rounded-2xl border border-[#ded7c7] bg-[#fbfaf6] px-4 py-3 outline-none focus:border-[#A8DCAB] transition" 
+                        placeholder="(11) 99999-9999" 
+                      />
+                      {/* Alteração: Exibição do Estado abaixo do input */}
+                      {obterEstado(dadosConta.telefone) && (
+                        <p className={`mt-1 text-xs font-bold ${obterEstado(dadosConta.telefone) === 'DDD Inválido' ? 'text-red-500' : 'text-[#3ca779]'}`}>
+                          {obterEstado(dadosConta.telefone) === 'DDD Inválido' ? 'DDD Inválido' : `Estado: ${obterEstado(dadosConta.telefone)}`}
+                        </p>
+                      )}
                       {erroTelefone && <p className="mt-1 text-xs text-red-500 font-bold">{erroTelefone}</p>}
                     </label>
                     <button type="submit" disabled={salvando} className="w-full rounded-2xl bg-[#3ca779] px-4 py-3.5 font-extrabold text-white shadow-lg hover:bg-[#2e8f65] transition disabled:opacity-60">
