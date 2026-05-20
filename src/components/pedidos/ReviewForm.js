@@ -1,24 +1,39 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { toast } from "react-hot-toast";
 
-export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
+export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess, reviewToEdit }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Inicializar com dados da avaliação a editar
+  useEffect(() => {
+    if (reviewToEdit) {
+      setRating(reviewToEdit.nota_ava || 5);
+      setComment(reviewToEdit.comentario_ava || "");
+      setExistingImages(reviewToEdit.imagens_ava || []);
+      setImageFiles([]);
+      setImagePreviews([]);
+    }
+  }, [reviewToEdit]);
+
   // Gerar previews das imagens
   const generatePreviews = (files) => {
     const previews = [];
+    let loadedCount = 0;
+
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         previews.push(e.target.result);
-        if (previews.length === files.length) {
+        loadedCount++;
+        if (loadedCount === files.length) {
           setImagePreviews(previews);
         }
       };
@@ -29,8 +44,10 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
   const handleImageChange = (e) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      if (files.length > 5) {
-        toast.error("Máximo de 5 imagens permitidas");
+      const totalImages = files.length + existingImages.length;
+      
+      if (totalImages > 5) {
+        toast.error(`Máximo de 5 imagens permitidas (você já tem ${existingImages.length})`);
         return;
       }
       setImageFiles(files);
@@ -57,8 +74,10 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
       const files = Array.from(e.dataTransfer.files).filter((file) =>
         file.type.startsWith("image/")
       );
-      if (files.length > 5) {
-        toast.error("Máximo de 5 imagens permitidas");
+      const totalImages = files.length + existingImages.length;
+      
+      if (totalImages > 5) {
+        toast.error(`Máximo de 5 imagens permitidas (você já tem ${existingImages.length})`);
         return;
       }
       setImageFiles(files);
@@ -66,11 +85,16 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
     }
   };
 
-  const removeImage = (index) => {
+  const removeNewImage = (index) => {
     const newFiles = imageFiles.filter((_, i) => i !== index);
     const newPreviews = imagePreviews.filter((_, i) => i !== index);
     setImageFiles(newFiles);
     setImagePreviews(newPreviews);
+  };
+
+  const removeExistingImage = (index) => {
+    const newExisting = existingImages.filter((_, i) => i !== index);
+    setExistingImages(newExisting);
   };
 
   const uploadImages = async (userId) => {
@@ -112,7 +136,7 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
       return;
     }
 
-    if (!produtoId && !pedidoId) {
+    if (!reviewToEdit && !produtoId && !pedidoId) {
       toast.error("É necessário selecionar um produto ou um pedido para avaliar.");
       console.error("Erro de validação: produtoId e pedidoId são nulos.", { produtoId, pedidoId });
       return;
@@ -123,38 +147,51 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
       return;
     }
 
-    console.log("Dados sendo enviados para avaliação:", {
-      usu_uuid: user.id,
-      id_sac: produtoId,
-      id_ped: pedidoId,
-      nota_ava: rating,
-      comentario_ava: comment,
-      nome_usu: user.email,
-    });
-
     const uploadedImageUrls = await uploadImages(user.id);
     if (imageFiles.length > 0 && uploadedImageUrls.length === 0) {
       return;
     }
 
-    const { error } = await supabase.from("avaliacao").insert([{
-      usu_uuid: user.id,
-      id_sac: produtoId,
-      id_ped: pedidoId || null,
+    // Combinar imagens existentes com as novas
+    const allImages = [...existingImages, ...uploadedImageUrls];
+
+    const reviewData = {
       nota_ava: rating,
       comentario_ava: comment,
-      nome_usu: user.email,
-      imagens_ava: uploadedImageUrls,
-    }]);
+      imagens_ava: allImages,
+    };
 
-    if (!error) {
-      toast.success("Avaliação enviada com sucesso! 🎉");
+    try {
+      if (reviewToEdit) {
+        // Modo EDIÇÃO
+        const { error } = await supabase
+          .from("avaliacao")
+          .update(reviewData)
+          .eq("id_ava", reviewToEdit.id_ava);
+
+        if (error) throw error;
+        toast.success("Avaliação atualizada com sucesso! 🎉");
+      } else {
+        // Modo CRIAÇÃO
+        const { error } = await supabase.from("avaliacao").insert([{
+          usu_uuid: user.id,
+          id_sac: produtoId,
+          id_ped: pedidoId || null,
+          nome_usu: user.email,
+          ...reviewData,
+        }]);
+
+        if (error) throw error;
+        toast.success("Avaliação enviada com sucesso! 🎉");
+      }
+
       onReviewSuccess();
       setComment("");
       setRating(5);
       setImageFiles([]);
       setImagePreviews([]);
-    } else {
+      setExistingImages([]);
+    } catch (error) {
       console.error("Erro ao enviar avaliação:", error);
       toast.error("Erro ao enviar avaliação. Tente novamente.");
     }
@@ -212,10 +249,53 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
         </p>
       </div>
 
+      {/* Imagens Existentes */}
+      {existingImages.length > 0 && (
+        <div className="mb-6">
+          <p className="text-sm font-semibold text-[#264f41] mb-3">
+            Fotos Atuais ({existingImages.length})
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {existingImages.map((imageUrl, index) => (
+              <div
+                key={index}
+                className="relative group rounded-lg overflow-hidden shadow-sm"
+              >
+                <img
+                  src={imageUrl}
+                  alt={`Foto atual ${index + 1}`}
+                  className="w-full h-24 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(index)}
+                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Dropzone para Imagens */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-[#264f41] mb-3">
-          Adicionar Fotos (Opcional)
+          {existingImages.length > 0 ? "Adicionar Mais Fotos" : "Adicionar Fotos"} (Opcional)
         </label>
         <div
           onDragEnter={handleDrag}
@@ -257,17 +337,17 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
               Arraste imagens aqui ou clique para selecionar
             </p>
             <p className="text-xs text-[#6b9e8a]">
-              PNG, JPG ou WEBP (Máximo 5 imagens)
+              PNG, JPG ou WEBP (Máximo 5 imagens no total)
             </p>
           </div>
         </div>
       </div>
 
-      {/* Preview das Imagens */}
+      {/* Preview das Novas Imagens */}
       {imagePreviews.length > 0 && (
         <div className="mb-6">
           <p className="text-sm font-semibold text-[#264f41] mb-3">
-            {imagePreviews.length} imagem{imagePreviews.length > 1 ? "s" : ""} selecionada{imagePreviews.length > 1 ? "s" : ""}
+            Novas Fotos ({imagePreviews.length})
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {imagePreviews.map((preview, index) => (
@@ -277,12 +357,12 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
               >
                 <img
                   src={preview}
-                  alt={`Preview ${index + 1}`}
+                  alt={`Nova foto ${index + 1}`}
                   className="w-full h-24 object-cover"
                 />
                 <button
                   type="button"
-                  onClick={() => removeImage(index)}
+                  onClick={() => removeNewImage(index)}
                   className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                 >
                   <svg
@@ -352,7 +432,7 @@ export default function ReviewForm({ pedidoId, produtoId, onReviewSuccess }) {
                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
               />
             </svg>
-            Enviar Avaliação
+            {reviewToEdit ? "Atualizar Avaliação" : "Enviar Avaliação"}
           </>
         )}
       </button>
