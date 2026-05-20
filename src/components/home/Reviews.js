@@ -153,6 +153,24 @@ export default function Reviews() {
               </div>
 
               <p className="text-[#4a7a66] text-sm leading-relaxed mb-4">"{review.comentario_ava}"</p>
+              
+              {/* Exibir imagens da avaliação se existirem */}
+              {review.imagens_ava && review.imagens_ava.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4 mb-4">
+                  {review.imagens_ava.map((imageUrl, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={imageUrl}
+                        alt={`Avaliação imagem ${index + 1}`}
+                        className="w-20 h-20 object-cover rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
