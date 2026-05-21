@@ -57,7 +57,7 @@ const GraficoBarraCor = ({ label, valor, max, hex }) => {
       </span>
       <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full transition-all duration-500 border-2 border-gray-300"
           style={{ width: `${pct}%`, backgroundColor: hex }}
         />
       </div>

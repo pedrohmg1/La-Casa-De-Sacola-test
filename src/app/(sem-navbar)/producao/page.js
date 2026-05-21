@@ -184,35 +184,6 @@ export default function Producao() {
                 handleDetalhesCliente={handleDetalhesCliente}/>
             </Tabs.Content>
           </Tabs.Root>
-
-{/*           <div className="overflow-x-auto border-2 rounded-t-xl">
-            <table className="w-full text-left">
-              <thead className="border-2 border-zinc-500">
-                <tr className="bg-[#264f41] text-white">
-                  <th className="p-3">ID Pedido</th>
-                  <th className="p-3 text-center">Quantidade</th>
-                  <th className="p-3 text-center">Preço Total (R$)</th>
-                  <th className="p-3 text-center">Mais Detalhes</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white border-gray-300">
-                {pedidos.map((pedido) => (
-                  <tr key={pedido.id} className="hover:bg-[#f0faf5] transition">
-                    <td className="p-4 font-bold text-[#264f41] max-w-[250px] truncate">{pedido.id}</td>
-                    <td className="p-3 text-center">{pedido.quantidade}</td>
-                    <td className="p-3 text-center">R${pedido.preco.toFixed(2)}</td>
-                    <td className="p-3 text-center">D
-                      <button 
-                        className="text-blue-600 hover:text-blue-800"
-                        onClick={() => handleAbrirPedido(pedido.id)}>
-                        Abrir
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div> */}
         </main>
 
         <Dialog.Root open={!!pedidoSelecionado} onOpenChange={(open) => { if (!open) handleFecharModal(); }}>
