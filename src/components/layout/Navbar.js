@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { PlusIcon, UpdateIcon, PersonIcon } from "@radix-ui/react-icons";
+import { PlusIcon, UpdateIcon, PersonIcon, IdCardIcon, HomeIcon, ArchiveIcon } from "@radix-ui/react-icons";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
 import useNavbarAuth from "../../hooks/loginAuthNavbar";
@@ -169,7 +169,9 @@ export default function Navbar() {
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-[#e4f4ed] rounded-2xl shadow-xl py-2 z-50 overflow-hidden">
                     <Link href="/perfil" className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f7f4eb]" onClick={() => setDropdownOpen(false)}>
-                      Minha Conta
+                      <div className="flex flex-row items-center">
+                        <IdCardIcon className="size-5 mr-1 gap-0.5"></IdCardIcon>Minha Conta
+                      </div>
                       {cargo !== "administrador" ? (
                         <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Dados, pedidos e endereços</span>
                       ) : (
@@ -179,35 +181,52 @@ export default function Navbar() {
                     <div className="h-px bg-[#e4f4ed] mx-4" />
                     {cargo !== "administrador" && (
                       <>
-                        <Link href="/novo-pedido" className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f7f4eb]" onClick={() => setDropdownOpen(false)}>
-                          <div className="flex flex-row items-center">
+                        <Link href="/novo-pedido" className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
+                          <div className="flex flex-row items-center gap-0.5">
                             <PlusIcon className="size-5 mr-1"></PlusIcon> Novo Pedido
                           </div>
                           <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Sua melhor sacola te aguarda!</span>
                         </Link>
                         <hr className="h-px bg-[#e4f4ed] mx-4" />
-                        <Link href="/enderecos" className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
-                          Meus Endereços
-                        </Link>
 
                         <Link href="/pedidos" className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
-                          Meus Pedidos
+                          <div className="flex flex-row items-center gap-0.5">
+                            <ArchiveIcon className="size-5 mr-1"></ArchiveIcon>Meus Pedidos
+                          </div>
+                        </Link>
+
+                        <Link href="/enderecos" className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
+                          <div className="flex flex-row items-center gap-0.5">
+                            <HomeIcon className="size-5 mr-1"></HomeIcon>Meus Endereços
+                          </div>
                         </Link>
                       </>
                     )}
                     {cargo === "administrador" && (
                       <>
-                        <Link href="/painel" className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors" onClick={() => setDropdownOpen(false)}>
+                        <Link
+                          href="/painel"
+                          className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
                           Painel Administrador
                           <span className="block text-xs font-medium text-[#866e79] mt-0.5">Gerenciar sacolas do site</span>
                         </Link>
 
-                        <Link href="/producao" className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors" onClick={() => setDropdownOpen(false)}>
+                        <Link
+                          href="/producao"
+                          className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
                           Sacolas em Produção
                           <span className="block text-xs font-medium text-[#866e79] mt-0.5">Acompanhar pedidos</span>
                         </Link>
 
-                        <Link href="/relatorios" className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors" onClick={() => setDropdownOpen(false)}>
+                        <Link
+                          href="/relatorios"
+                          className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
                           Relatórios
                           <span className="block text-xs font-medium text-[#866e79] mt-0.5">Visão geral do negócio</span>
                         </Link>
@@ -296,26 +315,30 @@ export default function Navbar() {
                 <p className="text-xs text-gray-500 px-2">
                   Você está logado como: <strong>{user.email}</strong>
                 </p>
-                <Link href="/perfil" onClick={() => setDropdownOpen(false)} className="flex flex-row items-center">
+                <Link href="/perfil" onClick={() => setDropdownOpen(false)} className="flex flex-row items-center gap-0.5">
                   <PersonIcon className="size-4 mr-1"></PersonIcon> Minha Conta
                 </Link>
                 <div className="h-px bg-[#e4f4ed] mx-4" />
                 {cargo !== "administrador" && (
                   <>
                     <Link href="/novo-pedido" className="" onClick={() => setMenuOpen(false)}>
-                      <div className="flex flex-row items-center">
+                      <div className="flex flex-row items-center gap-0.5">
                         <PlusIcon className="size-4 mr-1"></PlusIcon> Novo Pedido
                       </div>
                     </Link>
 
                     <hr className="h-px bg-[#e4f4ed] mx-4" />
 
-                    <Link href="/enderecos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
-                      Meus Endereços
+                    <Link href="/pedidos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
+                      <div className="flex flex-row items-center gap-0.5">
+                        <ArchiveIcon className="size-4 mr-1"></ArchiveIcon> Meus Pedidos
+                      </div>
                     </Link>
 
-                    <Link href="/pedidos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
-                      Meus Pedidos
+                    <Link href="/enderecos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
+                      <div className="flex flex-row items-center gap-0.5">
+                        <HomeIcon className="size-4 mr-1"></HomeIcon> Meus Endereços
+                      </div>
                     </Link>
                   </>
                 )}
