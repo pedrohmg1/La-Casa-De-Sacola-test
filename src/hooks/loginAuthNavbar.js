@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabaseClient";
 export default function useNavbarAuth() {
   const [user, setUser] = useState(null);
   const [cargo, setCargo] = useState(null);
+  const [nome, setNome] = useState(null);
   const [navbarLoading, setNavbarLoading] = useState(true);
   const [erro, setErro] = useState(false);
 
@@ -27,12 +28,15 @@ export default function useNavbarAuth() {
         if (currentUser) {
           const { data: perfil, error: perfilError } = await supabase
             .from("usuario")
-            .select("cargo")
+            .select("cargo, nome_usu")
             .eq("uuid_usu", currentUser.id)
             .single();
 
           if (perfilError) throw perfilError;
-          if (montado) setCargo(perfil?.cargo ?? null);
+          if (montado) {
+            setCargo(perfil?.cargo ?? null);
+            setNome(perfil?.nome_usu ?? null); 
+          }
         } else {
           if (montado) setCargo(null);
         }
@@ -81,5 +85,5 @@ export default function useNavbarAuth() {
     };
   }, []);
 
-  return { user, cargo, navbarLoading, erro };
+  return { user, cargo, nome, navbarLoading, erro };
 }

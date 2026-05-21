@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { PlusIcon, UpdateIcon } from "@radix-ui/react-icons";
+import { PlusIcon, UpdateIcon, PersonIcon } from "@radix-ui/react-icons";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
 import useNavbarAuth from "../../hooks/loginAuthNavbar";
@@ -32,7 +32,7 @@ export default function Navbar() {
     };
   }, [dropdownOpen]);
 
-  const { user, cargo, navbarLoading, erro } = useNavbarAuth();
+  const { user, cargo, nome, navbarLoading, erro } = useNavbarAuth();
   useEffect(() => {
     if (erro) {
       toast.error(ToastErroAuth, opcoesErroAuth);
@@ -158,9 +158,8 @@ export default function Navbar() {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 text-sm font-semibold text-[#264f41] bg-white border border-[#e4f4ed] rounded-xl px-4 py-2 hover:bg-[#f0faf5] transition-all"
                 >
-                  <span className="max-w-[150px] truncate font-bold">
-                    {/*Alterar futuramente para pegar o nome do usuário ao invés do e-mail. Deixar e-mail como failsafe, caso não consiga o nome por alguma razão -Mateus*/}
-                    {user.email}
+                  <span className="w-[170px] truncate font-bold text-left flex-row flex gap-2">
+                    <PersonIcon className="size-5 mr-1"></PersonIcon>Olá, {nome || user.email}!
                   </span>
                   <svg className={`w-4 h-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -288,28 +287,28 @@ export default function Navbar() {
             ) : (
               <>
                 <p className="text-xs text-gray-500 px-2">
-                  Logado como: <b>{user.email}</b>
+                  Você está logado como: <strong>{user.email}</strong>
                 </p>
-                <Link href="/perfil" onClick={() => setDropdownOpen(false)}>
-                  Minha Conta
+                <Link href="/perfil" onClick={() => setDropdownOpen(false)} className="flex flex-row items-center">
+                  <PersonIcon className="size-4 mr-1"></PersonIcon> Minha Conta
                 </Link>
                 <div className="h-px bg-[#e4f4ed] mx-4" />
                 {cargo !== "administrador" && (
                   <>
+                    <Link href="/novo-pedido" className="" onClick={() => setMenuOpen(false)}>
+                      <div className="flex flex-row items-center">
+                        <PlusIcon className="size-4 mr-1"></PlusIcon> Novo Pedido
+                      </div>
+                    </Link>
+
+                    <hr className="h-px bg-[#e4f4ed] mx-4" />
+
                     <Link href="/enderecos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
                       Meus Endereços
                     </Link>
 
                     <Link href="/pedidos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
                       Meus Pedidos
-                    </Link>
-
-                    <hr className="my-1 border-[#e4f4ed]" />
-
-                    <Link href="/novo-pedido" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
-                      <div className="flex flex-row items-center">
-                        <PlusIcon className="size-4 mr-1"></PlusIcon> Novo Pedido
-                      </div>
                     </Link>
                   </>
                 )}
