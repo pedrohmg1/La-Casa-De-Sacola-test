@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabaseClient";
 import Footer from "@/components/layout/Footer";
 import ProductSelectionModal from "@/components/pedidos/ProductSelectionModal";
@@ -194,7 +194,6 @@ export default function PerfilPage() {
 
   return (
     <div className="min-h-screen bg-[#eef5ee] flex flex-col text-[#264f41] relative overflow-hidden">
-      <Toaster position="top-right" />
       
       <ProductSelectionModal 
         isOpen={isModalOpen} 

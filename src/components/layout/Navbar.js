@@ -158,7 +158,7 @@ export default function Navbar() {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 text-sm font-semibold text-[#264f41] bg-white border border-[#e4f4ed] rounded-xl px-4 py-2 hover:bg-[#f0faf5] transition-all"
                 >
-                  <span className="w-[170px] truncate font-bold text-left flex-row flex gap-2">
+                  <span className="w-[170px] truncate font-bold text-left flex-row flex gap-0.5">
                     <PersonIcon className="size-5 mr-1"></PersonIcon>Olá, {nome || user.email}!
                   </span>
                   <svg className={`w-4 h-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +170,11 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-[#e4f4ed] rounded-2xl shadow-xl py-2 z-50 overflow-hidden">
                     <Link href="/perfil" className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f7f4eb]" onClick={() => setDropdownOpen(false)}>
                       Minha Conta
-                      <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Dados, pedidos e endereços</span>
+                      {cargo !== "administrador" ? (
+                        <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Dados, pedidos e endereços</span>
+                      ) : (
+                        <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Dados, acessos e detalhes</span>
+                      )}
                     </Link>
                     <div className="h-px bg-[#e4f4ed] mx-4" />
                     {cargo !== "administrador" && (
@@ -193,16 +197,19 @@ export default function Navbar() {
                     )}
                     {cargo === "administrador" && (
                       <>
-                        <Link href="/painel" className="block px-4 py-2 text-sm text-[#8f0000] hover:text-red-700 transition-colors" onClick={() => setDropdownOpen(false)}>
+                        <Link href="/painel" className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors" onClick={() => setDropdownOpen(false)}>
                           Painel Administrador
+                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">Gerenciar sacolas do site</span>
                         </Link>
 
-                        <Link href="/producao" className="block px-4 py-2 text-sm text-[#8f0000] hover:text-red-700 transition-colors" onClick={() => setDropdownOpen(false)}>
+                        <Link href="/producao" className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors" onClick={() => setDropdownOpen(false)}>
                           Sacolas em Produção
+                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">Acompanhar pedidos</span>
                         </Link>
 
-                        <Link href="/relatorios" className="block px-4 py-2 text-sm text-[#8f0000] hover:text-red-700 transition-colors" onClick={() => setDropdownOpen(false)}>
+                        <Link href="/relatorios" className="block px-4 py-3 text-sm font-bold text-[#8f0000] hover:text-red-700 hover:bg-[#f7ebf4] transition-colors" onClick={() => setDropdownOpen(false)}>
                           Relatórios
+                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">Visão geral do negócio</span>
                         </Link>
                       </>
                     )}
