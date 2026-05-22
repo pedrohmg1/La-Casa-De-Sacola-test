@@ -1,12 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 export async function POST(req) {
   try {
+    // Inicializar DENTRO da função garante que process.env está pronto
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+       console.error("Variáveis de ambiente em falta no servidor.");
+       return Response.json({ error: "Erro de configuração do servidor." }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { email, senha, token } = await req.json();
 
     const { data: usuarios } = await supabase.auth.admin.listUsers();
