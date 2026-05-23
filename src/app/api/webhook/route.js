@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
-const xSignature = request.headers.get('x-signature');
-const xRequestId = request.headers.get('x-request-id');
-const rawBody = await request.text();
 
 // Inicializa o cliente do Mercado Pago usando a sua variável de ambiente
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
@@ -30,10 +27,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 });
     }
   }
-  
+
   try {
     // 1. Pega os parâmetros da URL que o Mercado Pago enviou na notificação
-    const url = new URL(request.url);
     const topic = url.searchParams.get('topic') || url.searchParams.get('type');
     const id = url.searchParams.get('data.id') || url.searchParams.get('id');
 
