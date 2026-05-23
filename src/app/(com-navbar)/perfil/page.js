@@ -131,6 +131,12 @@ export default function PerfilPage() {
     if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
       return { valid: false, message: "Telefone deve ter 10 ou 11 dígitos." };
     }
+
+    const ddd = telefoneLimpo.slice(0, 2);
+    if (!dddMap[ddd]) {
+      return { valid: false, message: "DDD Inválido." };
+    }
+
     return { valid: true };
   };
 
@@ -140,6 +146,7 @@ export default function PerfilPage() {
     const validacaoTelefone = validateTelefone(dadosConta.telefone);
     if (!validacaoTelefone.valid) {
       setErroTelefone(validacaoTelefone.message);
+      toast.error(validacaoTelefone.message);
       return;
     }
 
@@ -296,23 +303,32 @@ export default function PerfilPage() {
                       <span className="block text-xs font-black uppercase tracking-widest text-[#7b867b] mb-2">E-mail</span>
                       <input type="email" value={dadosConta.email} readOnly className="w-full rounded-2xl border border-[#ded7c7] bg-gray-50 px-4 py-3 outline-none opacity-70" />
                     </label>
-                    <label className="block">
+                   <label className="block">
                       <span className="block text-xs font-black uppercase tracking-widest text-[#7b867b] mb-2">Telefone</span>
                       <input 
-                        type="tel" 
-                        value={dadosConta.telefone} 
-                        onChange={handleChange("telefone")} 
-                        maxLength="15" 
-                        className="w-full rounded-2xl border border-[#ded7c7] bg-[#fbfaf6] px-4 py-3 outline-none focus:border-[#A8DCAB] transition" 
-                        placeholder="(11) 99999-9999" 
-                      />
-                      {/* Alteração: Exibição do Estado abaixo do input */}
-                      {obterEstado(dadosConta.telefone) && (
-                        <p className={`mt-1 text-xs font-bold ${obterEstado(dadosConta.telefone) === 'DDD Inválido' ? 'text-red-500' : 'text-[#3ca779]'}`}>
-                          {obterEstado(dadosConta.telefone) === 'DDD Inválido' ? 'DDD Inválido' : `Estado: ${obterEstado(dadosConta.telefone)}`}
-                        </p>
-                      )}
-                      {erroTelefone && <p className="mt-1 text-xs text-red-500 font-bold">{erroTelefone}</p>}
+                          type="tel" 
+                           value={dadosConta.telefone} 
+                           onChange={handleChange("telefone")} 
+                           maxLength="15" 
+                           className="w-full rounded-2xl border border-[#ded7c7] bg-[#fbfaf6] px-4 py-3 outline-none focus:border-[#A8DCAB] transition" 
+                           placeholder="(11) 99999-9999" 
+                         />
+  
+                         {erroTelefone ? (
+                   <div className="mt-1">
+                          <p className="text-xs text-red-500 font-bold">{erroTelefone}</p>
+                           {/* Esta mensagem extra agora só aparece quando o usuário clica em Salvar */}
+                           {erroTelefone === "DDD Inválido." && (
+                          <p className="text-[11px] text-red-500 mt-0.5">Por favor, verifique o DDD inserido.</p>
+                       )}
+                    </div>
+                       ) : (
+                            obterEstado(dadosConta.telefone) && (
+                          <p className={`mt-1 text-xs font-bold ${obterEstado(dadosConta.telefone) === 'DDD Inválido' ? 'text-red-500' : 'text-[#3ca779]'}`}>
+                            {obterEstado(dadosConta.telefone) === 'DDD Inválido' ? 'DDD Inválido' : `Estado: ${obterEstado(dadosConta.telefone)}`}
+                          </p>
+                           )
+                       )}
                     </label>
                     <button type="submit" disabled={salvando} className="w-full rounded-2xl bg-[#3ca779] px-4 py-3.5 font-extrabold text-white shadow-lg hover:bg-[#2e8f65] transition disabled:opacity-60">
                       {salvando ? "Salvando..." : "Salvar alterações"}
