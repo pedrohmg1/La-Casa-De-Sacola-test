@@ -20,6 +20,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 const STORAGE_PREFIX = "lcs-perfil";
+const NOME_MAX_LENGTH = 40;
 
 // Mapeamento de DDD para os Estados Brasileiros
 const dddMap = {
@@ -238,7 +239,10 @@ export default function PerfilPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-xs font-black uppercase tracking-[0.28em] text-[#d48a2f]">Bem-vindo(a)</p>
-                      <h2 className="mt-1 text-2xl lg:text-3xl font-extrabold leading-tight" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                      <h2
+                        className="mt-1 max-w-[20ch] text-2xl lg:text-3xl font-extrabold leading-tight break-words"
+                        style={{ fontFamily: "'Quicksand', sans-serif" }}
+                      >
                         {dadosConta.nome}
                       </h2>
                     </div>
@@ -297,7 +301,16 @@ export default function PerfilPage() {
                   <form onSubmit={handleSalvar} className="space-y-4">
                     <label className="block">
                       <span className="block text-xs font-black uppercase tracking-widest text-[#7b867b] mb-2">Nome</span>
-                      <input type="text" value={dadosConta.nome} onChange={handleChange("nome")} className="w-full rounded-2xl border border-[#ded7c7] bg-[#fbfaf6] px-4 py-3 outline-none focus:border-[#A8DCAB] transition" />
+                      <input
+                        type="text"
+                        value={dadosConta.nome}
+                        onChange={handleChange("nome")}
+                        maxLength={NOME_MAX_LENGTH}
+                        className="w-full rounded-2xl border border-[#ded7c7] bg-[#fbfaf6] px-4 py-3 outline-none focus:border-[#A8DCAB] transition"
+                      />
+                      {dadosConta.nome.length >= NOME_MAX_LENGTH && (
+                        <p className="mt-1 text-xs font-bold text-red-500">Nome atingiu o limite de 40 caracteres.</p>
+                      )}
                     </label>
                     <label className="block">
                       <span className="block text-xs font-black uppercase tracking-widest text-[#7b867b] mb-2">E-mail</span>
