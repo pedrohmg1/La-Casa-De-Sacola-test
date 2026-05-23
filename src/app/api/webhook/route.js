@@ -1,11 +1,36 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+const xSignature = request.headers.get('x-signature');
+const xRequestId = request.headers.get('x-request-id');
+const rawBody = await request.text();
 
 // Inicializa o cliente do Mercado Pago usando a sua variável de ambiente
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
 
+
 export async function POST(request) {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  const xSignature = request.headers.get('x-signature');
+  const xRequestId = request.headers.get('x-request-id');
+  const url = new URL(request.url);
+
+  if (xSignature && secret) {
+    const parts = Object.fromEntries(xSignature.split(',').map(p => p.split('=')));
+    const dataId = url.searchParams.get('data.id');
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${parts.ts};`;
+
+    const crypto = await import('crypto');
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(manifest);
+    const expectedSignature = hmac.digest('hex');
+
+    if (expectedSignature !== parts.v1) {
+      console.warn('Assinatura inválida recebida no webhook.');
+      return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 });
+    }
+  }
+  
   try {
     // 1. Pega os parâmetros da URL que o Mercado Pago enviou na notificação
     const url = new URL(request.url);
@@ -25,9 +50,9 @@ export async function POST(request) {
 
         // 5. Atualiza o status_ped na tabela do Supabase
         const { error } = await supabase
-          .from('pedidos') 
-          .update({ status_ped: 'Pago' }) // Altere 'Pago' para o texto exato que você usa no seu sistema
-          .eq('id', pedidoId);
+          .from('pedido') 
+          .update({ status_ped: 'Pago Aguardando Produção' }) // Altere 'Pago' para o texto exato que você usa no seu sistema
+          .eq('id_ped', pedidoId);
 
         if (error) {
           console.error('Erro ao atualizar o Supabase:', error);
