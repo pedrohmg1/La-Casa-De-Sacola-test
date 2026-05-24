@@ -91,14 +91,15 @@ export function CartProvider({ children }) {
   };
 
   const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
     setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id_sac === productId ? { ...item, quantity } : item
-      )
+      prevItems.map((item) => {
+        if (item.id_sac !== productId) return item;
+        
+        const minimo = item.quantidademin_sac || 1;
+        if (quantity < minimo) return item; // Trava no mínimo, não remove
+        
+        return { ...item, quantity };
+      })
     );
   };
 

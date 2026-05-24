@@ -300,7 +300,8 @@ export default function CarrinhoPage() {
                     
                     <div className="flex-grow">
                       <h3 className="text-lg font-bold text-[#264f41] group-hover:text-[#3ca779] transition-colors">{item.nome_sac}</h3>
-                      <p className="text-sm text-[#6b9e8a] font-medium">{item.tamanho_sac} • {item.cor_sac || 'Cor padrão'}</p>
+                      <p className="text-sm text-[#6b9e8a] font-medium whitespace-pre-wrap">{item.tamanho_sac} • {item.cor_sac || 'Cor padrão'}</p>
+                      <p className="text-sm text-[#6b9e8a] font-medium whitespace-pre-wrap">Min. {item.quantidademin_sac} unidades</p>
                       <p className="text-[#3ca779] font-black mt-1">R$ {Number(item.precounitario_sac).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/unid</span></p>
                     </div>
 
