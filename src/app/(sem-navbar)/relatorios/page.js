@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import RotaAdmin from "@/components/admin/rotaAdmin";
 import { useRelatorios } from "@/hooks/useRelatorios";
-import { exportarParaCSV } from "../exportacao/exportacao";
+import { exportarParaPDF } from "../exportacao/exportacao";
+import useTour from "@/hooks/useTour";
 
 const formatoMoeda = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -91,11 +92,11 @@ export default function Relatorios() {
     ? Math.max(...faturamentoMensal.map((f) => f.receita))
     : 1;
 
-  const handleExportarCSV = (dados, nome) => {
+  const handleExportarPDF = (dados, nome) => {
     if (!dados || dados.length === 0) return;
     setExportando(nome);
     setTimeout(() => {
-      exportarParaCSV(dados, nome);
+      exportarParaPDF(dados, nome);
       setExportando(null);
     }, 100);
   };
@@ -165,14 +166,14 @@ export default function Relatorios() {
               </h3>
               <button
                 onClick={() =>
-                  handleExportarCSV(coresData, "cores_mais_utilizadas.csv")
+                  handleExportarPDF(coresData, "cores_mais_utilizadas.pdf")
                 }
                 disabled={!coresData.length || exportando}
                 className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
               >
-                {exportando === "cores_mais_utilizadas.csv"
+                {exportando === "cores_mais_utilizadas.pdf"
                   ? "Exportando..."
-                  : "Exportar CSV"}
+                  : "Exportar PDF"}
               </button>
             </div>
             {coresData.length === 0 ? (
@@ -198,13 +199,13 @@ export default function Relatorios() {
                 Tipos de Sacola Mais Pedidos
               </h3>
               <button
-                onClick={() => handleExportarCSV(tiposData, "tipos_sacola.csv")}
+                onClick={() => handleExportarPDF(tiposData, "tipos_sacola.pdf")}
                 disabled={!tiposData.length || exportando}
                 className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
               >
-                {exportando === "tipos_sacola.csv"
+                {exportando === "tipos_sacola.pdf"
                   ? "Exportando..."
-                  : "Exportar CSV"}
+                  : "Exportar PDF"}
               </button>
             </div>
             {tiposData.length === 0 ? (
@@ -233,14 +234,14 @@ export default function Relatorios() {
               </h3>
               <button
                 onClick={() =>
-                  handleExportarCSV(statusData, "pedidos_por_status.csv")
+                  handleExportarPDF(statusData, "pedidos_por_status.pdf")
                 }
                 disabled={!statusData.length || exportando}
                 className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
               >
-                {exportando === "pedidos_por_status.csv"
+                {exportando === "pedidos_por_status.pdf"
                   ? "Exportando..."
-                  : "Exportar CSV"}
+                  : "Exportar PDF"}
               </button>
             </div>
             {statusData.length === 0 ? (
@@ -287,20 +288,20 @@ export default function Relatorios() {
               </h3>
               <button
                 onClick={() =>
-                  handleExportarCSV(
+                  handleExportarPDF(
                     faturamentoMensal.map((f) => ({
                       ...f,
                       receita: formatoMoeda(f.receita),
                     })),
-                    "faturamento_mensal.csv",
+                    "faturamento_mensal.pdf",
                   )
                 }
                 disabled={!faturamentoMensal.length || exportando}
                 className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
               >
-                {exportando === "faturamento_mensal.csv"
+                {exportando === "faturamento_mensal.pdf"
                   ? "Exportando..."
-                  : "Exportar CSV"}
+                  : "Exportar PDF"}
               </button>
             </div>
             {faturamentoMensal.length === 0 ? (
