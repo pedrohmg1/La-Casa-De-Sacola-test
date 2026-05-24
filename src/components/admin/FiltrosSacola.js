@@ -10,7 +10,7 @@ export default function FiltrosSacola({
 }) {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-[#e4f4ed] mb-5 gap-4">
-      <div className="flex items-center gap-6">
+      <div id="filtros-sacola" className="flex items-center gap-6">
         {/* Checkbox: Ativas */}
         <label className="flex items-center gap-2 cursor-pointer select-none text-gray-700 font-semibold text-sm lg:text-base">
           <Checkbox.Root
@@ -41,6 +41,7 @@ export default function FiltrosSacola({
       </div>
 
       <button
+        id="btn-adicionar-sacola"
         onClick={onAbrirNovaSacola}
         className="bg-[#264f41] hover:bg-[#403c37] text-white px-5 py-2.5 rounded-xl font-bold transition shadow-md flex items-center gap-2 text-sm lg:text-md w-full sm:w-auto justify-center"
       >

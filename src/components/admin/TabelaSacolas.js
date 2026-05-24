@@ -2,7 +2,10 @@ import { EyeClosedIcon, Pencil2Icon } from "@radix-ui/react-icons";
 
 export default function TabelaSacolas({ sacolasFiltradas, onAbrirEdicao }) {
   return (
-    <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-[#e4f4ed] overflow-hidden">
+    <div
+      id="tabela-sacolas"
+      className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-[#e4f4ed] overflow-hidden"
+    >
       <div className="max-h-full overflow-auto custom-scrollbar">
         <table className="w-full text-left">
           <thead className="sticky top-0 z-10 bg-[#264f41] text-white">

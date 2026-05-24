@@ -3,7 +3,14 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { PlusIcon, UpdateIcon, PersonIcon, IdCardIcon, HomeIcon, ArchiveIcon } from "@radix-ui/react-icons";
+import {
+  PlusIcon,
+  UpdateIcon,
+  PersonIcon,
+  IdCardIcon,
+  HomeIcon,
+  ArchiveIcon,
+} from "@radix-ui/react-icons";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
 import useNavbarAuth from "../../hooks/loginAuthNavbar";
@@ -21,7 +28,11 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleClickFora = (e) => {
-      if (dropdownOpen && dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (
+        dropdownOpen &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target)
+      ) {
         setDropdownOpen(false);
       }
     };
@@ -55,7 +66,9 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-[#f4f7f5] shadow-sm border-b border-[#e4f4ed]">
       {/* Top bar */}
-      <div className="bg-[#292622] text-white text-xs py-1.5 text-center font-medium tracking-wide">Frete grátis para pedidos acima de R$500 &nbsp;|&nbsp; La Casa de Sacola</div>
+      <div className="bg-[#292622] text-white text-xs py-1.5 text-center font-medium tracking-wide">
+        Frete grátis para pedidos acima de R$500 &nbsp;|&nbsp; La Casa de Sacola
+      </div>
 
       {/* Main nav */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,7 +76,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#292622] to-[#8f0000] flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <img src="/img/logoSimples.png" alt="Logo" className="w-7 h-7 object-contain z-[999]" />
+              <img
+                src="/img/logoSimples.png"
+                alt="Logo"
+                className="w-7 h-7 object-contain z-[999]"
+              />
               {/* Comentei o SVG da sacola pra testar com a imagem no lugar dele, mas pode trazer de volta se acharem melhor   -Mateus
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -73,43 +90,69 @@ export default function Navbar() {
               */}
             </div>
             <div className="flex flex-col leading-none">
-              <span className="font-extrabold text-[#292622] text-lg tracking-tight" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              <span
+                className="font-extrabold text-[#292622] text-lg tracking-tight"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
                 La Casa
               </span>
-              <span className="text-[#8f0000] text-xs font-bold tracking-widest uppercase -mt-1">de Sacola</span>
+              <span className="text-[#8f0000] text-xs font-bold tracking-widest uppercase -mt-1">
+                de Sacola
+              </span>
             </div>
           </Link>
 
           {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/#categorias" className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors">
+            <Link
+              href="/#categorias"
+              className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors"
+            >
               {" "}
               Sacolas{" "}
             </Link>
-            <Link href="/#sobre" className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors">
+            <Link
+              href="/#sobre"
+              className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors"
+            >
               {" "}
               Quem Somos{" "}
             </Link>
-            <Link href="/#como-funciona" className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors">
+            <Link
+              href="/#como-funciona"
+              className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors"
+            >
               {" "}
               Como Funciona{" "}
             </Link>
-            <Link href="/#mockup" className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors">
+            <Link
+              href="/#mockup"
+              className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors"
+            >
               {" "}
               Visualizador{" "}
             </Link>
-            <Link href="/#contato" className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors">
+            <Link
+              href="/#contato"
+              className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors"
+            >
               {" "}
               Contato{" "}
             </Link>
-            <Link href="/catalogo" className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors">
+            <Link
+              href="/catalogo"
+              className="text-sm font-medium text-[#3a5c4e] hover:text-[#3ca779] transition-colors"
+            >
               Produtos Modelos
             </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
             {!navbarLoading && user && cargo !== "administrador" && (
-              <Link href="/carrinho" className="relative p-2 text-[#264f41] hover:bg-[#f0faf5] rounded-xl transition-all group">
+              <Link
+                href="/carrinho"
+                className="relative p-2 text-[#264f41] hover:bg-[#f0faf5] rounded-xl transition-all group"
+              >
                 <svg
                   width="24"
                   height="24"
@@ -137,10 +180,16 @@ export default function Navbar() {
               <div className="w-32 h-9 rounded-xl bg-[#e4f4ed] animate-pulse" />
             ) : !user ? (
               <>
-                <Link href="/login" className="text-sm font-semibold text-[#8f0000] border border-[#8f0000] rounded-xl px-4 py-2 hover:bg-[#f0faf5] transition-colors">
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold text-[#8f0000] border border-[#8f0000] rounded-xl px-4 py-2 hover:bg-[#f0faf5] transition-colors"
+                >
                   Entrar
                 </Link>
-                <Link href="/cadastro" className="text-sm font-semibold text-white bg-[#5ab58f] rounded-xl px-4 py-2 hover:bg-[#2e8f65] transition-colors shadow-sm">
+                <Link
+                  href="/cadastro"
+                  className="text-sm font-semibold text-white bg-[#5ab58f] rounded-xl px-4 py-2 hover:bg-[#2e8f65] transition-colors shadow-sm"
+                >
                   Cadastrar-se
                 </Link>
                 {/* Troquei o "fazer pedido" por "cadastrar-se"   -Mateus
@@ -159,45 +208,82 @@ export default function Navbar() {
                   className="flex items-center gap-2 text-sm font-semibold text-[#264f41] bg-white border border-[#e4f4ed] rounded-xl px-4 py-2 hover:bg-[#f0faf5] transition-all"
                 >
                   <span className="w-[170px] truncate font-bold text-left flex-row flex gap-0.5">
-                    <PersonIcon className="size-5 mr-1"></PersonIcon>Olá, {nome || user.email}!
+                    <PersonIcon className="size-5 mr-1"></PersonIcon>Olá,{" "}
+                    {nome || user.email}!
                   </span>
-                  <svg className={`w-4 h-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  <svg
+                    className={`w-4 h-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
 
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-[#e4f4ed] rounded-2xl shadow-xl py-2 z-50 overflow-hidden">
-                    <Link href="/perfil" className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f7f4eb]" onClick={() => setDropdownOpen(false)}>
+                    <Link
+                      href="/perfil"
+                      className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f7f4eb]"
+                      onClick={() => setDropdownOpen(false)}
+                    >
                       <div className="flex flex-row items-center">
-                        <IdCardIcon className="size-5 mr-1 gap-0.5"></IdCardIcon>Minha Conta
+                        <IdCardIcon className="size-5 mr-1 gap-0.5"></IdCardIcon>
+                        Minha Conta
                       </div>
                       {cargo !== "administrador" ? (
-                        <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Dados, pedidos e endereços</span>
+                        <span className="block text-xs font-medium text-[#6e8679] mt-0.5">
+                          Dados, pedidos e endereços
+                        </span>
                       ) : (
-                        <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Dados, acessos e detalhes</span>
+                        <span className="block text-xs font-medium text-[#6e8679] mt-0.5">
+                          Dados, acessos e detalhes
+                        </span>
                       )}
                     </Link>
                     <div className="h-px bg-[#e4f4ed] mx-4" />
                     {cargo !== "administrador" && (
                       <>
-                        <Link href="/novo-pedido" className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
+                        <Link
+                          href="/novo-pedido"
+                          className="block px-4 py-3 text-sm font-bold text-[#264f41] hover:bg-[#f0faf5]"
+                          onClick={() => setDropdownOpen(false)}
+                        >
                           <div className="flex flex-row items-center gap-0.5">
-                            <PlusIcon className="size-5 mr-1"></PlusIcon> Novo Pedido
+                            <PlusIcon className="size-5 mr-1"></PlusIcon> Novo
+                            Pedido
                           </div>
-                          <span className="block text-xs font-medium text-[#6e8679] mt-0.5">Sua melhor sacola te aguarda!</span>
+                          <span className="block text-xs font-medium text-[#6e8679] mt-0.5">
+                            Sua melhor sacola te aguarda!
+                          </span>
                         </Link>
                         <hr className="h-px bg-[#e4f4ed] mx-4" />
 
-                        <Link href="/pedidos" className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
+                        <Link
+                          href="/pedidos"
+                          className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]"
+                          onClick={() => setDropdownOpen(false)}
+                        >
                           <div className="flex flex-row items-center gap-0.5">
-                            <ArchiveIcon className="size-5 mr-1"></ArchiveIcon>Meus Pedidos
+                            <ArchiveIcon className="size-5 mr-1"></ArchiveIcon>
+                            Meus Pedidos
                           </div>
                         </Link>
 
-                        <Link href="/enderecos" className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]" onClick={() => setDropdownOpen(false)}>
+                        <Link
+                          href="/enderecos"
+                          className="block px-4 py-2 text-sm text-[#3a5c4e] hover:bg-[#f0faf5]"
+                          onClick={() => setDropdownOpen(false)}
+                        >
                           <div className="flex flex-row items-center gap-0.5">
-                            <HomeIcon className="size-5 mr-1"></HomeIcon>Meus Endereços
+                            <HomeIcon className="size-5 mr-1"></HomeIcon>Meus
+                            Endereços
                           </div>
                         </Link>
                       </>
@@ -210,7 +296,9 @@ export default function Navbar() {
                           onClick={() => setDropdownOpen(false)}
                         >
                           Painel Administrador
-                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">Gerenciar sacolas do site</span>
+                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">
+                            Gerenciar sacolas do site
+                          </span>
                         </Link>
 
                         <Link
@@ -219,7 +307,9 @@ export default function Navbar() {
                           onClick={() => setDropdownOpen(false)}
                         >
                           Sacolas em Produção
-                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">Acompanhar pedidos</span>
+                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">
+                            Acompanhar pedidos
+                          </span>
                         </Link>
 
                         <Link
@@ -228,12 +318,39 @@ export default function Navbar() {
                           onClick={() => setDropdownOpen(false)}
                         >
                           Relatórios
-                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">Visão geral do negócio</span>
+                          <span className="block text-xs font-medium text-[#866e79] mt-0.5">
+                            Visão geral do negócio
+                          </span>
                         </Link>
+
+                        <button
+                          onClick={() => {
+                            localStorage.removeItem("tourPainelVisto");
+                            localStorage.removeItem("tourProducaoVisto");
+                            localStorage.removeItem("tourRelatoriosVisto");
+                            localStorage.removeItem("tourHomeVisto");
+                            localStorage.removeItem("tourGlobalAtivo");
+                            localStorage.setItem(
+                              "tourGlobalAtivo",
+                              "tourPainel",
+                            );
+                            setDropdownOpen(false);
+                            router.push("/painel");
+                          }}
+                          className="flex flex-col w-full text-left px-4 py-2 text-sm text-[#264f41] hover:bg-[#f0faf5] font-semibold"
+                        >
+                          Faça um Tour!
+                          <span className="block text-xs font-medium text-[#6e8679] mt-0.5">
+                            Saiba as funções de administração
+                          </span>
+                        </button>
                       </>
                     )}
                     <hr className="my-1 border-[#e4f4ed]" />
-                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 font-bold hover:bg-red-50">
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 font-bold hover:bg-red-50"
+                    >
                       Sair
                     </button>
                   </div>
@@ -247,25 +364,62 @@ export default function Navbar() {
             {/* Só mostra o carrinho se o carregamento acabou, o utilizador existe e não é admin */}
             {!navbarLoading && user && cargo !== "administrador" && (
               <Link href="/carrinho" className="relative p-2 text-[#264f41]">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="9" cy="21" r="1"></circle>
                   <circle cx="20" cy="21" r="1"></circle>
                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                 </svg>
                 {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-[#8f0000] text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">{cartCount}</span>
+                  <span className="absolute top-0 right-0 bg-[#8f0000] text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
+                    {cartCount}
+                  </span>
                 )}
               </Link>
             )}
 
-            <button className="p-2 rounded-lg text-[#264f41] hover:bg-[#f0faf5]" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+            <button
+              className="p-2 rounded-lg text-[#264f41] hover:bg-[#f0faf5]"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu"
+            >
               {menuOpen ? (
-                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  width="22"
+                  height="22"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               ) : (
-                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  width="22"
+                  height="22"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               )}
             </button>
@@ -276,22 +430,46 @@ export default function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-[#e4f4ed] px-4 pb-4 pt-2 flex flex-col gap-3">
-          <Link href="/#categorias" className="text-sm font-medium text-[#3a5c4e] py-2" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/#categorias"
+            className="text-sm font-medium text-[#3a5c4e] py-2"
+            onClick={() => setMenuOpen(false)}
+          >
             Sacolas
           </Link>
-          <Link href="/#sobre" className="text-sm font-medium text-[#3a5c4e] py-2" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/#sobre"
+            className="text-sm font-medium text-[#3a5c4e] py-2"
+            onClick={() => setMenuOpen(false)}
+          >
             Quem Somos
           </Link>
-          <Link href="/#como-funciona" className="text-sm font-medium text-[#3a5c4e] py-2" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/#como-funciona"
+            className="text-sm font-medium text-[#3a5c4e] py-2"
+            onClick={() => setMenuOpen(false)}
+          >
             Como Funciona
           </Link>
-          <Link href="/#mockup" className="text-sm font-medium text-[#3a5c4e] py-2" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/#mockup"
+            className="text-sm font-medium text-[#3a5c4e] py-2"
+            onClick={() => setMenuOpen(false)}
+          >
             Visualizador
           </Link>
-          <Link href="/#contato" className="text-sm font-medium text-[#3a5c4e] py-2" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/#contato"
+            className="text-sm font-medium text-[#3a5c4e] py-2"
+            onClick={() => setMenuOpen(false)}
+          >
             Contato
           </Link>
-          <Link href="/catalogo" className="text-sm font-medium text-[#3a5c4e] py-2" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/catalogo"
+            className="text-sm font-medium text-[#3a5c4e] py-2"
+            onClick={() => setMenuOpen(false)}
+          >
             Produtos Modelos
           </Link>
 
@@ -300,10 +478,18 @@ export default function Navbar() {
               <div className="w-32 h-9 rounded-xl bg-[#e4f4ed] animate-pulse" />
             ) : !user ? (
               <div className="flex gap-3">
-                <Link href="/login" className="flex-1 text-center text-sm font-semibold text-[#8f0000] border border-[#8f0000] rounded-xl px-4 py-2" onClick={() => setMenuOpen(false)}>
+                <Link
+                  href="/login"
+                  className="flex-1 text-center text-sm font-semibold text-[#8f0000] border border-[#8f0000] rounded-xl px-4 py-2"
+                  onClick={() => setMenuOpen(false)}
+                >
                   Entrar
                 </Link>
-                <Link href="/cadastro" className="flex-1 text-center text-sm font-semibold text-white bg-[#5ab58f] rounded-xl px-4 py-2" onClick={() => setMenuOpen(false)}>
+                <Link
+                  href="/cadastro"
+                  className="flex-1 text-center text-sm font-semibold text-white bg-[#5ab58f] rounded-xl px-4 py-2"
+                  onClick={() => setMenuOpen(false)}
+                >
                   Cadastrar-se
                 </Link>
                 {/* Troquei o "fazer pedido" por "cadastrar-se"   -Mateus
@@ -315,49 +501,102 @@ export default function Navbar() {
                 <p className="text-xs text-gray-500 px-2">
                   Você está logado como: <strong>{user.email}</strong>
                 </p>
-                <Link href="/perfil" onClick={() => setDropdownOpen(false)} className="flex flex-row items-center gap-0.5">
+                <Link
+                  href="/perfil"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex flex-row items-center gap-0.5"
+                >
                   <PersonIcon className="size-4 mr-1"></PersonIcon> Minha Conta
                 </Link>
                 <div className="h-px bg-[#e4f4ed] mx-4" />
                 {cargo !== "administrador" && (
                   <>
-                    <Link href="/novo-pedido" className="" onClick={() => setMenuOpen(false)}>
+                    <Link
+                      href="/novo-pedido"
+                      className=""
+                      onClick={() => setMenuOpen(false)}
+                    >
                       <div className="flex flex-row items-center gap-0.5">
-                        <PlusIcon className="size-4 mr-1"></PlusIcon> Novo Pedido
+                        <PlusIcon className="size-4 mr-1"></PlusIcon> Novo
+                        Pedido
                       </div>
                     </Link>
 
                     <hr className="h-px bg-[#e4f4ed] mx-4" />
 
-                    <Link href="/pedidos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
+                    <Link
+                      href="/pedidos"
+                      className="text-sm font-bold text-[#264f41] py-2"
+                      onClick={() => setMenuOpen(false)}
+                    >
                       <div className="flex flex-row items-center gap-0.5">
-                        <ArchiveIcon className="size-4 mr-1"></ArchiveIcon> Meus Pedidos
+                        <ArchiveIcon className="size-4 mr-1"></ArchiveIcon> Meus
+                        Pedidos
                       </div>
                     </Link>
 
-                    <Link href="/enderecos" className="text-sm font-bold text-[#264f41] py-2" onClick={() => setMenuOpen(false)}>
+                    <Link
+                      href="/enderecos"
+                      className="text-sm font-bold text-[#264f41] py-2"
+                      onClick={() => setMenuOpen(false)}
+                    >
                       <div className="flex flex-row items-center gap-0.5">
-                        <HomeIcon className="size-4 mr-1"></HomeIcon> Meus Endereços
+                        <HomeIcon className="size-4 mr-1"></HomeIcon> Meus
+                        Endereços
                       </div>
                     </Link>
                   </>
                 )}
                 {cargo === "administrador" && (
                   <>
-                    <Link href="/painel" className="text-sm font-bold text-[#8f0000] py-2" onClick={() => setMenuOpen(false)}>
+                    <Link
+                      href="/painel"
+                      className="text-sm font-bold text-[#8f0000] py-2"
+                      onClick={() => setMenuOpen(false)}
+                    >
                       Painel Administrador
                     </Link>
 
-                    <Link href="/producao" className="text-sm font-bold text-[#8f0000] py-2" onClick={() => setMenuOpen(false)}>
+                    <Link
+                      href="/producao"
+                      className="text-sm font-bold text-[#8f0000] py-2"
+                      onClick={() => setMenuOpen(false)}
+                    >
                       Sacolas em Produção
                     </Link>
 
-                    <Link href="/relatorios" className="text-sm font-bold text-[#8f0000] py-2" onClick={() => setMenuOpen(false)}>
+                    <Link
+                      href="/relatorios"
+                      className="text-sm font-bold text-[#8f0000] py-2"
+                      onClick={() => setMenuOpen(false)}
+                    >
                       Relatórios
                     </Link>
+
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem("tourPainelVisto");
+                        localStorage.removeItem("tourProducaoVisto");
+                        localStorage.removeItem("tourRelatoriosVisto");
+                        localStorage.removeItem("tourHomeVisto");
+                        localStorage.removeItem("tourGlobalAtivo");
+                        localStorage.setItem("tourGlobalAtivo", "tourPainel");
+                        setDropdownOpen(false);
+                        router.push("/painel");
+                      }}
+                      className="flex flex-col w-full text-left px-4 py-2 text-sm text-[#264f41] hover:bg-[#f0faf5] font-semibold"
+                    >
+                      Faça um Tour!
+                      <span className="block text-xs font-medium text-[#6e8679] mt-0.5">
+                        Saiba as funções de administração
+                      </span>
+                    </button>
                   </>
                 )}
-                <button onClick={handleLogout} className="text-left text-sm font-bold text-red-600 py-2">
+                <button
+                  onClick={handleLogout}
+                  className="text-left text-sm font-bold text-red-600 py-2"
+                >
                   Sair
                 </button>
               </>

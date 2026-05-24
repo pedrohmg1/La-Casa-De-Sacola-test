@@ -101,6 +101,47 @@ export default function Relatorios() {
     }, 100);
   };
 
+  useTour(
+    "tourRelatorios",
+    [
+      {
+        element: "#cards-totais",
+        popover: {
+          title: "Métricas Gerais",
+          description:`
+            Aqui você encontra:
+            <ul class="list-disc pl-5 mt-2 space-y-1">
+            <li>O quanto lucrou</li>
+            <li>Quais produtos mais comprados</li>
+            <li>Quantos clientes cadastrados</li>
+            </ul>
+             `,
+          side: "bottom",
+        },
+      },
+      {
+        element: "#baixar-dados",
+        popover: {
+          title: "Baixar Dados",
+          description:
+            "Clique aqui para baixar todas os dados em arquivo <i>PDF</i>.",
+          side: "top",
+        },
+      },
+      {
+        element: "#atualizar-dados",
+        popover: {
+          title: "Atualizar Dados",
+          description:
+            "Clique aqui para recarregar os gráficos com os dados mais recentes.",
+          side: "top",
+        },
+      },
+    ],
+    "/",
+    "tourHome",
+  );
+
   if (loading) {
     return (
       <RotaAdmin>
@@ -135,7 +176,7 @@ export default function Relatorios() {
           </h2>
         </div>
 
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div id="cards-totais" className="flex flex-wrap gap-4 mb-8">
           <CardTotal
             titulo="Total de Pedidos"
             valor={totais.pedidos}
@@ -165,6 +206,7 @@ export default function Relatorios() {
                 Cores Mais Utilizadas
               </h3>
               <button
+                id="baixar-dados"
                 onClick={() =>
                   handleExportarPDF(coresData, "cores_mais_utilizadas.pdf")
                 }
@@ -341,6 +383,7 @@ export default function Relatorios() {
 
         <div className="mt-8 flex justify-end">
           <button
+            id="atualizar-dados"
             onClick={carregarRelatorios}
             className="text-sm font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors px-4 py-2 border border-[#e4f4ed] rounded-xl hover:bg-[#f0faf5]"
           >

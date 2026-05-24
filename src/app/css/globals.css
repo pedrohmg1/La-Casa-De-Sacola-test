@@ -33,3 +33,50 @@
   z-index: 99999 !important;
   transform: none !important;
 }
+
+/* TOUR */
+/* Fundo e borda do popover */
+.driver-popover {
+  /* background-color: #264f41 !important; */
+  border-radius: 12px !important;
+  border: 1px solid #264f41 !important;
+  padding: 20px !important;
+}
+
+/* Título */
+.driver-popover-title {
+  color: #264f41 !important;
+  font-size: 1.4rem !important;
+  font-weight: bold !important;
+}
+
+/* Descrição */
+.driver-popover-description {
+  font-size: 1rem !important;
+  margin-top: 8px !important;
+}
+
+/* Botões (Próximo, Anterior, Entendido) */
+.driver-popover-footer button {
+  background-color: #5ab58f9a !important;
+  color: #264f41 !important;
+  border: 1px solid #264f41 !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  padding: 6px 14px !important;
+  text-shadow: none !important;
+}
+
+.driver-popover-footer button:hover {
+  background-color: #3ca779 !important;
+  text-decoration: none !important;
+}
+
+/* O destaque ao redor do elemento apontado */
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+.esconder-botao-anterior .driver-popover-prev-btn {
+  display: none !important;
+}

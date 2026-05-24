@@ -1,3 +1,5 @@
+"use client";
+
 import Hero from "@/components/home/Hero";
 import Benefits from "@/components/home/Benefits";
 import BagCategories from "@/components/home/BagCategories";
@@ -7,8 +9,22 @@ import Reviews from "@/components/home/Reviews";
 import CTABanner from "@/components/home/CTABanner";
 import Footer from "@/components/layout/Footer";
 import MockupGenerator from "@/components/home/MockupGenerator";
+import useTour from "@/hooks/useTour";
 
 export default function HomePage() {
+
+  useTour("tourHome", [
+  {
+    popover: {
+      title: "Tudo Pronto!",
+      description:
+        "Isto é tudo que você precisa saber para administrar a loja! Explore as seções, gerencie suas sacolas e acompanhe os pedidos!",
+      side: "center",
+      popoverClass: "esconder-botao-anterior",
+    },
+  },
+]);
+
   return (
     <>
       <meta charSet="UTF-8" />
