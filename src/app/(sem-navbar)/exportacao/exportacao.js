@@ -1,15 +1,18 @@
-export function exportarParaCSV(dados, nomeArquivo = "relatorio.csv") {
-  const cabecalho = Object.keys(dados[0]);
-  const csv = [
-    cabecalho.join(","),
-    ...dados.map((linha) =>
-      cabecalho.map((campo) => `"${linha[campo] ?? ""}"`).join(","),
-    ),
-  ].join("\n");
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-  const blob = new Blob([csv], { type: "text/csv" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = nomeArquivo;
-  link.click();
+export function exportarParaPDF(dados, nomeArquivo = "relatorio.pdf") {
+  const doc = new jsPDF();
+  const cabecalho = Object.keys(dados[0]);
+
+  autoTable(doc, {
+    head: [cabecalho],
+    body: dados.map((linha) =>
+      cabecalho.map((campo) => String(linha[campo] ?? ""))
+    ),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [38, 79, 65] }, // verde escuro do projeto
+  });
+
+  doc.save(nomeArquivo);
 }
