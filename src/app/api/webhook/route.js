@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
-// Inicializa o cliente do Mercado Pago usando a sua variável de ambiente
-const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
+const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
 
 export async function POST(request) {
   const secret = process.env.MP_WEBHOOK_SECRET;
@@ -29,37 +32,78 @@ export async function POST(request) {
   }
 
   try {
-    // 1. Pega os parâmetros da URL que o Mercado Pago enviou na notificação
-    const topic = url.searchParams.get('topic') || url.searchParams.get('type');
-    const id = url.searchParams.get('data.id') || url.searchParams.get('id');
+    const body = await request.json().catch(() => null);
 
-    // 2. Verifica se a notificação é especificamente sobre um pagamento
+    const topic = url.searchParams.get('type')
+      || url.searchParams.get('topic')
+      || body?.type;
+
+    const id = url.searchParams.get('data.id')
+      || body?.data?.id
+      || url.searchParams.get('id');
+
     if (topic === 'payment' && id) {
       const payment = new Payment(client);
-      
-      // 3. Busca os detalhes daquele pagamento no Mercado Pago
       const paymentData = await payment.get({ id });
 
-      // 4. Se o status for "approved" (pagamento aprovado), atualizamos o banco
       if (paymentData.status === 'approved') {
-        const pedidoId = paymentData.external_reference; // O ID do pedido que foi passado na criação
-
-        // 5. Atualiza o status_ped na tabela do Supabase
-        const { error } = await supabase
-          .from('pedido') 
-          .update({ status_ped: 'Pago Aguardando Produção' }) // Altere 'Pago' para o texto exato que você usa no seu sistema
+        const pedidoId = paymentData.external_reference;
+      
+        // Verifica se o pedido já foi processado
+        const { data: pedidoAtual } = await supabaseAdmin
+          .from('pedido')
+          .select('status_ped')
+          .eq('id_ped', pedidoId)
+          .single();
+      
+        if (pedidoAtual?.status_ped === 'Pago Aguardando Produção') {
+          console.log(`Pedido ${pedidoId} já foi processado, ignorando.`);
+          return NextResponse.json({ success: true }, { status: 200 });
+        }
+      
+        const { error } = await supabaseAdmin
+          .from('pedido')
+          .update({ status_ped: 'Pago Aguardando Produção' })
           .eq('id_ped', pedidoId);
 
         if (error) {
           console.error('Erro ao atualizar o Supabase:', error);
           return NextResponse.json({ error: 'Erro ao atualizar o banco de dados' }, { status: 500 });
         }
-        
+
         console.log(`Pagamento aprovado! Pedido ${pedidoId} atualizado.`);
+      } else if (paymentData.status === 'in_process' || paymentData.status === 'pending') {
+        // ✅ Novo — PIX e boleto aguardando confirmação
+        const pedidoId = paymentData.external_reference;
+      
+        const { error } = await supabaseAdmin
+          .from('pedido')
+          .update({ status_ped: 'Aguardando Pagamento' })
+          .eq('id_ped', pedidoId);
+      
+        if (error) {
+          console.error('Erro ao atualizar pedido:', error);
+          return NextResponse.json({ error: 'Erro ao atualizar o banco de dados' }, { status: 500 });
+        }
+      
+        console.log(`Pagamento pendente. Pedido ${pedidoId} aguardando confirmação.`);
+      } else if (paymentData.status === 'rejected') {
+        const pedidoId = paymentData.external_reference;
+      
+        const { error } = await supabaseAdmin
+          .from('pedido')
+          .update({ status_ped: 'Cancelado' })
+          .eq('id_ped', pedidoId);
+      
+        if (error) {
+          console.error('Erro ao cancelar pedido:', error);
+          return NextResponse.json({ error: 'Erro ao atualizar o banco de dados' }, { status: 500 });
+        }
+      
+        console.log(`Pagamento rejeitado. Pedido ${pedidoId} cancelado.`);
       }
     }
 
-    // 6. Retorna código 200 para o Mercado Pago saber que você recebeu a mensagem
     return NextResponse.json({ success: true }, { status: 200 });
 
   } catch (error) {

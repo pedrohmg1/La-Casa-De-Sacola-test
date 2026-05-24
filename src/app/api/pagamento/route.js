@@ -12,16 +12,18 @@ export async function POST(request) {
     // Cria a intenção de pagamento no Mercado Pago
     const response = await preference.create({
       body: {
-        items: body.items, // Recebe os itens do carrinho
-        external_reference: body.pedidoId ? body.pedidoId.toString() : "pedido_teste", // ID do pedido
+        items: body.items,
+        external_reference: body.pedidoId.toString(), // ID do pedido
+        notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhook`,
         
         // Mantemos os links para caso o usuário feche a janela do MP, 
         // mas retiramos o "auto_return" para evitar o erro de bloqueio do localhost
         back_urls: {
-          success: 'http://localhost:3000/pedidos',
-          failure: 'http://localhost:3000/carrinho',
-          pending: 'http://localhost:3000/pedidos'
-        }
+          success: `${process.env.NEXT_PUBLIC_APP_URL}/pedidos`,
+          failure: `${process.env.NEXT_PUBLIC_APP_URL}/carrinho`,
+          pending: `${process.env.NEXT_PUBLIC_APP_URL}/pedidos`
+        },
+        auto_return: 'approved',
       }
     });
 

@@ -35,7 +35,7 @@ export default function CarrinhoPage() {
           // Atualiza o status_ped para 'cancelado' no Supabase
           const { error } = await supabase
             .from("pedido")
-            .update({ status_ped: "cancelado" })
+            .update({ status_ped: "Cancelado" })
             .eq("id_ped", idPedidoCancelado);
 
           if (!error) {
@@ -102,7 +102,8 @@ export default function CarrinhoPage() {
     0
   );
 
-  const total = subtotal + valorFrete;
+  const descontoPix = metodoPagamento === 'pix' ? subtotal * 0.05 : 0;
+  const total = subtotal - descontoPix + valorFrete;
 
   const calcularFrete = async () => {
     const cepLimpo = cep.replace(/\D/g, '');
@@ -249,7 +250,7 @@ export default function CarrinhoPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f7f5]">
       <main className="flex-grow container mx-auto px-4 py-8 mt-20">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -288,9 +289,9 @@ export default function CarrinhoPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Lista de Itens */}
-              <div className="lg:col-span-2 flex flex-col gap-4">
+              <div className="lg:col-span-1 flex flex-col gap-4">
                 {cartItems.map((item) => (
                   <div key={item.id_sac} className="bg-white rounded-3xl p-6 border border-[#e4f4ed] shadow-sm flex items-center gap-6 group hover:border-[#3ca779] transition-all">
                     <div className="w-24 h-24 bg-[#f0faf5] rounded-2xl flex items-center justify-center text-[#6b9e8a] font-bold text-[10px] text-center p-2 uppercase tracking-tighter">
@@ -422,6 +423,12 @@ export default function CarrinhoPage() {
                       <span>Subtotal</span>
                       <span>R$ {subtotal.toFixed(2)}</span>
                     </div>
+                  {metodoPagamento === 'pix' && (
+                    <div className="flex justify-between text-[#3ca779] font-medium">
+                      <span>Desconto PIX (5%)</span>
+                      <span>- R$ {descontoPix.toFixed(2)}</span>
+                    </div>
+                  )}
                     <div className="flex justify-between text-[#6b9e8a] font-medium">
                       <span>Frete</span>
                       <span className="text-[#3ca779] font-bold">
