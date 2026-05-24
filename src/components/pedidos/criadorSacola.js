@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { toast } from "react-hot-toast";
@@ -9,7 +10,7 @@ import { PlusIcon, MinusIcon, ArchiveIcon, CheckIcon, ChevronLeftIcon, ChevronRi
 // ---------------------------------------------------------------------------
 async function uploadParaCloudinary(arquivo) {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = "publico"; // nome do preset que você criou
+  const uploadPreset = "publico";
 
   const formData = new FormData();
   formData.append("file", arquivo);
@@ -221,7 +222,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
     setCorSelecionada(null);
     setNumCoresLogo(1);
     setQuantidade(1);
-    setLogos();
+    setLogos([]);
     setAberto(false);
   };
 
@@ -232,14 +233,34 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
     setSalvando(true);
     try {
       let idPedido = pedidoId;
-
+  
       if (!idPedido) {
-        const { data: novoPedido, error: errPedido } = await supabase.from("pedido").insert({ status_ped: "No Carrinho", usu_uuid: userId }).select().single();
-        if (errPedido) throw errPedido;
-        idPedido = novoPedido.id_ped;
-        setPedidoId(idPedido);
+        // Verifica se já existe um pedido "No Carrinho" antes de criar um novo
+        const { data: pedidos } = await supabase
+          .from("pedido")
+          .select("id_ped")
+          .eq("usu_uuid", userId)
+          .eq("status_ped", "No Carrinho")
+          .order("data_criacao", { ascending: false })
+          .limit(1);
+  
+        const pedidoExistente = pedidos?.[0];
+  
+        if (pedidoExistente) {
+          idPedido = pedidoExistente.id_ped;
+          setPedidoId(idPedido);
+        } else {
+          const { data: novoPedido, error: errPedido } = await supabase
+            .from("pedido")
+            .insert({ status_ped: "No Carrinho", usu_uuid: userId })
+            .select()
+            .single();
+          if (errPedido) throw errPedido;
+          idPedido = novoPedido.id_ped;
+          setPedidoId(idPedido);
+        }
       }
-
+  
       const { error: errItem } = await supabase.from("itens_pedido").insert({
         ped_id: idPedido,
         sac_id: sacolaSelecionada.id_sac,
@@ -250,15 +271,10 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
         logo_urls: logos.map((l) => l.url).filter(Boolean),
       });
       if (errItem) throw errItem;
-
+  
       toast.success("Sacola adicionada ao pedido!");
-      onSacolaAdicionada({
-        ...sacolaSelecionada,
-        quantity: quantidade,
-        cor_sac: corSelecionada.nome_cor,
-        cor_id: corSelecionada.id_cor,
-        logo_url: logos[0]?.url || null,
-      });
+      // Notifica o pai para atualizar o carrinho via DB
+      onSacolaAdicionada();
       setPasso(6);
     } catch (e) {
       console.error("Erro ao salvar sacola:", e);
@@ -682,6 +698,11 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
             >
               Criar outra sacola
             </button>
+            <Link href="/carrinho">
+            <button className="px-6 py-3 rounded-2xl border-2 border-[#3ca779] text-[#3ca779] hover:bg-[#f0faf5] font-bold transition-all">
+              Ir para o carrinho
+            </button>
+            </Link>
           </div>
         </div>
       )}

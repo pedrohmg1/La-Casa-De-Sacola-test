@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function CarrinhoPage() {
-  const { cartItems, removeFromCart, updateQuantity, cartCount, clearCart } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, cartCount, clearCart, pedidoId } = useCart();
   const router = useRouter();
   
   // Estados de controle de acesso
@@ -34,9 +34,9 @@ export default function CarrinhoPage() {
         try {
           // Atualiza o status_ped para 'cancelado' no Supabase
           const { error } = await supabase
-            .from("pedido")
-            .update({ status_ped: "Cancelado" })
-            .eq("id_ped", idPedidoCancelado);
+          .from("pedido")
+          .update({ status_ped: "No Carrinho" }) // Restaura o carrinho
+          .eq("id_ped", idPedidoCancelado);
 
           if (!error) {
             toast.error("Pagamento não concluído. O pedido foi marcado como cancelado.");
@@ -156,59 +156,41 @@ export default function CarrinhoPage() {
 
   const finalizarCompra = async () => {
     if (!tipoFrete) {
-      toast.error("Por favor, selecione uma opção de frete (Correios ou A combinar).");
+      toast.error("Por favor, selecione uma opção de frete.");
       return;
     }
-
     if (tipoFrete === "correios" && valorFrete === 0) {
-      toast.error("Por favor, insira um CEP e calcule o frete antes de finalizar.");
+      toast.error("Por favor, calcule o frete antes de finalizar.");
       return;
     }
-
+    if (!pedidoId) {
+      toast.error("Carrinho não encontrado. Tente recarregar a página.");
+      return;
+    }
+  
     setLoading(true);
-
+  
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        throw new Error("Sessão expirada. Por favor, faça login novamente.");
-      }
-
-      // 1. Salva o pedido no Supabase
-      const { data: pedido, error: pedidoError } = await supabase
+      if (userError || !user) throw new Error("Sessão expirada. Faça login novamente.");
+  
+      // ✅ ATUALIZA o pedido existente — não cria um novo
+      const { error: pedidoError } = await supabase
         .from("pedido")
-        .insert({
-          usu_uuid: user.id,          
-          valor_total: total,         
-          status_ped: "pendente",     
-          metodo_pagamento: metodoPagamento, 
-          cep_entrega: cep            
+        .update({
+          valor_total: total,
+          status_ped: "Aguardando Pagamento",
+          metodo_pagamento: metodoPagamento,
+          cep_entrega: cep,
         })
-        .select()
-        .single();
-
-      if (pedidoError) {
-        throw new Error(`Erro no pedido: ${pedidoError.message}`);
-      }
-
-      // 2. Salva os itens do pedido no Supabase
-      const itens = cartItems.map((item) => ({
-        ped_id: pedido.id_ped,        
-        sac_id: item.id_sac,         
-        quantidade: item.quantity,
-        preco: item.precounitario_sac,
-        cor_id: item.cor_id
-      }));
-
-      const { error: itensError } = await supabase.from("itens_pedido").insert(itens);
-
-      if (itensError) {
-        throw new Error(`Erro nos itens: ${itensError.message}`);
-      }
-
-      // 3. Integração com a API do Mercado Pago
+        .eq("id_ped", pedidoId);
+  
+      if (pedidoError) throw new Error(`Erro ao atualizar pedido: ${pedidoError.message}`);
+  
+      // ✅ Itens já estão no banco — não precisa reinserir
+  
       const dadosPedido = {
-        pedidoId: pedido.id_ped,
+        pedidoId: pedidoId,
         items: cartItems.map((item) => ({
           id: item.id_sac,
           title: `${item.nome_sac} - ${item.tamanho_sac}`,
@@ -217,26 +199,22 @@ export default function CarrinhoPage() {
           currency_id: 'BRL'
         }))
       };
-
+  
       const res = await fetch('/api/pagamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dadosPedido),
       });
-
+  
       const data = await res.json();
-      
-      // 4. Redirecionamento Direto
+  
       if (data.init_point) {
         toast.success("Redirecionando para o pagamento...");
-        
-        // MODIFICAÇÃO: Removemos o clearCart() daqui para manter as sacolas salvas caso ele desista.
-        
         window.location.href = data.init_point;
       } else {
-        throw new Error("Não foi possível gerar o link de pagamento no Mercado Pago.");
+        throw new Error("Não foi possível gerar o link de pagamento.");
       }
-
+  
     } catch (error) {
       console.error("Erro no checkout:", error);
       toast.error(error.message || "Não foi possível finalizar a compra.");
@@ -293,7 +271,7 @@ export default function CarrinhoPage() {
               {/* Lista de Itens */}
               <div className="lg:col-span-1 flex flex-col gap-4">
                 {cartItems.map((item) => (
-                  <div key={item.id_sac} className="bg-white rounded-3xl p-6 border border-[#e4f4ed] shadow-sm flex items-center gap-6 group hover:border-[#3ca779] transition-all">
+                  <div key={item.id_ten} className="bg-white rounded-3xl p-6 border border-[#e4f4ed] shadow-sm flex items-center gap-6 group hover:border-[#3ca779] transition-all">
                     <div className="w-24 h-24 bg-[#f0faf5] rounded-2xl flex items-center justify-center text-[#6b9e8a] font-bold text-[10px] text-center p-2 uppercase tracking-tighter">
                       {item.tipo_sac}
                     </div>
@@ -308,14 +286,14 @@ export default function CarrinhoPage() {
                     <div className="flex flex-col items-end gap-3">
                       <div className="flex items-center bg-[#f0faf5] rounded-xl border border-[#e4f4ed] p-1">
                         <button 
-                          onClick={() => updateQuantity(item.id_sac, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.id_ten, item.quantity - 1)}
                           className="p-1.5 hover:bg-white rounded-lg text-[#3ca779] transition-colors"
                         >
                           <MinusIcon />
                         </button>
                         <span className="w-8 text-center font-bold text-[#264f41]">{item.quantity}</span>
                         <button 
-                          onClick={() => updateQuantity(item.id_sac, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.id_ten, item.quantity + 1)}
                           className="p-1.5 hover:bg-white rounded-lg text-[#3ca779] transition-colors"
                         >
                           <PlusIcon />
@@ -324,7 +302,7 @@ export default function CarrinhoPage() {
                       
                       <button 
                         onClick={() => {
-                          removeFromCart(item.id_sac);
+                          removeFromCart(item.id_ten);
                           toast.error("Item removido");
                         }}
                         className="text-[#8f0000] hover:bg-red-50 p-2 rounded-xl transition-colors flex items-center gap-1 text-xs font-bold"

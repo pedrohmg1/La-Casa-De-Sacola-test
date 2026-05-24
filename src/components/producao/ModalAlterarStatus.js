@@ -9,9 +9,9 @@ import { toast } from "react-hot-toast";
 
 export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatusAtualizado }) {
   const [statusDisponiveis, setStatusDisponiveis] = useState([]);
-  const [statusSelecionado, setStatusSelecionado]   = useState("");
-  const [carregando, setCarregando]                  = useState(false);
-  const [salvando, setSalvando]                      = useState(false);
+  const [statusSelecionado, setStatusSelecionado] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   // Busca os valores do enum "estatuse" via RPC ao abrir o modal
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
       // (ver instrução de criação abaixo no comentário do arquivo)
       const { data, error } = await supabase.rpc("listar_enum_estatuse");
       if (error) throw error;
-      setStatusDisponiveis(data.map((row) => row.valor));
+      setStatusDisponiveis(data.map((row) => row.valor).filter((status) => status !== "No Carrinho"));
     } catch (e) {
       console.error("Erro ao buscar status:", e);
       toast.error("Não foi possível carregar os status disponíveis.");
@@ -41,32 +41,30 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
       onOpenChange(false);
       return;
     }
-  
+
     setSalvando(true);
     try {
       // Busca o usuário logado
-      const { data: { user } } = await supabase.auth.getUser();
-  
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       // Busca o nome do usuário
-      const { data: perfil } = await supabase
-        .from("usuario")
-        .select("nome_usu, email_usu")
-        .eq("uuid_usu", user.id)
-        .single();
-  
+      const { data: perfil } = await supabase.from("usuario").select("nome_usu, email_usu").eq("uuid_usu", user.id).single();
+
       const nomeAlterador = perfil?.nome_usu || perfil?.email_usu || user.email;
-  
+
       const { error } = await supabase
         .from("pedido")
-        .update({ 
+        .update({
           status_ped: statusSelecionado,
-          alterado_por: nomeAlterador,        // salva quem alterou
-          ultima_alteracao: new Date().toISOString() // atualiza timestamp
+          alterado_por: nomeAlterador, // salva quem alterou
+          ultima_alteracao: new Date().toISOString(), // atualiza timestamp
         })
         .eq("id_ped", pedido.id_ped);
-  
+
       if (error) throw error;
-  
+
       toast.success("Status atualizado com sucesso!");
       onStatusAtualizado(pedido.id_ped, statusSelecionado, nomeAlterador);
       onOpenChange(false);
@@ -93,12 +91,8 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
                 <UpdateIcon className="text-[#3ca779] size-4" />
               </div>
               <div>
-                <h2 className="text-md font-extrabold text-[#264f41] uppercase tracking-tight">
-                  Alterar Status
-                </h2>
-                <p className="text-xs text-gray-400 font-bold">
-                  Pedido #{pedido?.id_ped}
-                </p>
+                <h2 className="text-md font-extrabold text-[#264f41] uppercase tracking-tight">Alterar Status</h2>
+                <p className="text-xs text-gray-400 font-bold">Pedido #{pedido?.id_ped}</p>
               </div>
             </div>
           </Dialog.Title>
@@ -111,9 +105,7 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
 
           {/* Dropdown de novo status */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">
-              Novo status
-            </label>
+            <label className="text-xs font-bold text-gray-500 uppercase">Novo status</label>
 
             {carregando ? (
               <div className="border border-gray-200 rounded-xl p-3 text-sm text-gray-400 flex items-center gap-2">
@@ -127,11 +119,7 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
                 </Select.Trigger>
 
                 <Select.Portal>
-                  <Select.Content
-                    position="popper"
-                    sideOffset={4}
-                    className="bg-white rounded-xl shadow-2xl border border-gray-200 z-[140] w-[--radix-select-trigger-width]"
-                  >
+                  <Select.Content position="popper" sideOffset={4} className="bg-white rounded-xl shadow-2xl border border-gray-200 z-[140] w-[--radix-select-trigger-width]">
                     <Select.Viewport className="p-1">
                       {statusDisponiveis.map((status) => (
                         <Select.Item
@@ -155,10 +143,7 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
           {/* Botões */}
           <div className="flex gap-3 pt-2 border-t border-gray-100">
             <Dialog.Close asChild>
-              <button
-                type="button"
-                className="flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition text-sm"
-              >
+              <button type="button" className="flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition text-sm">
                 Cancelar
               </button>
             </Dialog.Close>
@@ -169,7 +154,9 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
               className="flex-1 p-3 bg-[#5ab58f] hover:bg-[#489474] text-white rounded-xl font-bold transition text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {salvando ? (
-                <><UpdateIcon className="animate-spin size-4" /> Salvando...</>
+                <>
+                  <UpdateIcon className="animate-spin size-4" /> Salvando...
+                </>
               ) : (
                 "Salvar"
               )}
@@ -178,9 +165,7 @@ export default function ModalAlterarStatus({ pedido, open, onOpenChange, onStatu
 
           {/* Botão X */}
           <Dialog.Close asChild>
-            <button className="absolute top-5 right-5 text-gray-400 hover:text-black font-bold text-lg transition">
-              ✕
-            </button>
+            <button className="absolute top-5 right-5 text-gray-400 hover:text-black font-bold text-lg transition">✕</button>
           </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>

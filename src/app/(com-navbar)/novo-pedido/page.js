@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function novoPedido() {
-  const { cartItems, removeFromCart, updateQuantity, cartCount, addToCart } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, cartCount, refreshCart  } = useCart();
   const router = useRouter();
   
   // Estados de controle de acesso
@@ -68,8 +68,8 @@ export default function novoPedido() {
   // Se não estiver autorizado (não logado ou admin), não renderiza o conteúdo
   if (!authorized) return null;
 
-  const handleSacolaAdicionada = (novaSacolaConfigurada) => {
-    addToCart(novaSacolaConfigurada); 
+  const handleSacolaAdicionada = () => {
+    refreshCart(); 
   };
 
   return (

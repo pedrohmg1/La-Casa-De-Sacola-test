@@ -165,7 +165,7 @@ export default function Producao() {
 
             <Tabs.Content value="aguardando" className="data-[state=active]:flex-1 data-[state=active]:min-h-0 data-[state=active]:flex data-[state=active]:flex-col">
               <TabelaProducao
-                dados={pedidos.filter((p) => p.status_ped === "Pago Aguardando Produção" || p.status_ped === "Aguardando Pagamento" || p.status_ped === "No Carrinho" || p.status_ped === "pendente")}
+                dados={pedidos.filter((p) => p.status_ped === "Pago Aguardando Produção" || p.status_ped === "Aguardando Pagamento" /* || p.status_ped === "No Carrinho" */ || p.status_ped === "pendente")}
                 onAbrirDetalhes={handleAbrirPedido}
                 handleAlterarStatus={handleAlterarStatus}
                 handleDetalhesCliente={handleDetalhesCliente}
