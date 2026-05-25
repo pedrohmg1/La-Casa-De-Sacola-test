@@ -31,8 +31,8 @@ export default function TabelaProducao({ dados, onAbrirDetalhes, handleAlterarSt
             {dados.map((pedido) => (
               <tr key={pedido.id_ped} className="hover:bg-[#f0faf5] transition">
                 <td className="p-4 font-bold text-[#264f41] max-w-[250px] truncate">#{pedido.id_ped}</td>
-                <td className="p-4 text-center">{pedido.itens_pedido.quantidade}</td>
-                <td className="p-4 text-center">R$ {(pedido.valor_total)}</td>
+                <td className="p-4 text-center">{pedido.itens_pedido.reduce((acc, item) => acc + item.quantidade, 0)}</td>
+                <td className="p-4 text-center">R$ {Number(pedido.valor_total).toFixed(2)}</td>
                 <td className="p-4 text-center">{pedido.status_ped}</td>
                 <td className="p-4 text-center">
                   <div className="flex gap-5 justify-center">

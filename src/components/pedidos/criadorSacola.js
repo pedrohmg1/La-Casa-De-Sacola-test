@@ -265,7 +265,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
         ped_id: idPedido,
         sac_id: sacolaSelecionada.id_sac,
         quantidade: quantidade,
-        preco: sacolaSelecionada.precounitario_sac,
+        preco: sacolaSelecionada.precounitario_sac * numCoresLogo,
         cor_id: corSelecionada.id_cor,
         logo_url: logos[0]?.url || null,
         logo_urls: logos.map((l) => l.url).filter(Boolean),
@@ -667,7 +667,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
 
             <div className="mt-4 pt-4 border-t border-[#e4f4ed] flex justify-between items-center">
               <span className="font-bold text-[#264f41]">Subtotal estimado</span>
-              <span className="text-xl font-extrabold text-[#3ca779]">R$ {(sacolaSelecionada?.precounitario_sac * quantidade * (numCoresLogo / 20)).toFixed(2).replace(".", ",")}</span>
+              <span className="text-xl font-extrabold text-[#3ca779]">R$ {(sacolaSelecionada?.precounitario_sac * quantidade * numCoresLogo).toFixed(2).replace(".", ",")}</span>
             </div>
           </div>
 
