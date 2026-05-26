@@ -147,6 +147,54 @@ export function CartProvider({ children }) {
     }
   };
 
+  // Função para adicionar item direto do catálogo
+  const addToCart = async (produto) => {
+    if (!userId) {
+      console.error("Usuário não logado.");
+      return;
+    }
+
+    let currentPedidoId = pedidoId;
+
+    // Se o usuário ainda não tem um pedido "No Carrinho", cria um agora
+    if (!currentPedidoId) {
+      const { data: novoPedido, error: erroPedido } = await supabase
+        .from("pedido")
+        .insert([{ 
+          usu_uuid: userId, 
+          status_ped: "No Carrinho" 
+        }])
+        .select()
+        .single();
+
+      if (erroPedido) {
+        console.error("Erro ao criar carrinho:", erroPedido);
+        return;
+      }
+      
+      currentPedidoId = novoPedido.id_ped;
+      setPedidoId(currentPedidoId);
+    }
+
+    // Insere o produto na tabela itens_pedido
+    const { error: erroItem } = await supabase
+      .from("itens_pedido")
+      .insert([{
+        ped_id: currentPedidoId,
+        sac_id: produto.id_sac,
+        quantidade: produto.quantidademin_sac || 1,
+        preco: produto.precounitario_sac,
+      }]);
+
+    if (!erroItem) {
+      refreshCart(); // Chama a função que já existe para atualizar os dados na tela
+    } else {
+      console.error("Erro ao adicionar produto:", erroItem);
+    }
+  };
+
+
+
   const clearCart = () => {
     setCartItems([]);
     setPedidoId(null);
@@ -163,7 +211,9 @@ export function CartProvider({ children }) {
       clearCart,
       refreshCart,
       cartCount,
+      addToCart,
       loadingCart,
+      
     }}>
       {children}
     </CartContext.Provider>
