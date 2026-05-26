@@ -84,6 +84,32 @@ export function CartProvider({ children }) {
     return () => authListener.subscription.unsubscribe();
   }, [fetchCartFromDB]);
 
+  useEffect(() => {
+    if (!userId || !pedidoId) return;
+  
+    const canal = supabase
+      .channel(`carrinho-${pedidoId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "pedido",
+          filter: `id_ped=eq.${pedidoId}`
+        },
+        (payload) => {
+          // Se o pedido foi pago, limpa o carrinho automaticamente
+          if (payload.new.status_ped !== "No Carrinho") {
+            clearCart();
+            toast.success("Pagamento confirmado! Seu pedido está em andamento.");
+          }
+        }
+      )
+      .subscribe();
+  
+    return () => supabase.removeChannel(canal);
+  }, [userId, pedidoId]);
+  
   // Chamado pelo criadorSacola após adicionar uma sacola
   const refreshCart = useCallback(() => {
     if (userId) fetchCartFromDB(userId);

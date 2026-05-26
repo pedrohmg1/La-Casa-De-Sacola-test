@@ -88,7 +88,47 @@ export default function Producao() {
     };
 
     fetchPedidos();
-  }, []);
+    const canal = supabase
+    .channel("pedidos-realtime")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "pedido" },
+      (payload) => {
+        if (payload.eventType === "INSERT") {
+          // Novo pedido: busca completo com joins e adiciona à lista
+          supabase
+            .from("pedido")
+            .select(`*, usuario(nome_usu, email_usu), itens_pedido(*,sacola(nome_sac, tipo_sac),cores(nome_cor))`)
+            .eq("id_ped", payload.new.id_ped)
+            .single()
+            .then(({ data }) => {
+              if (data) setPedidos((prev) => [data, ...prev]);
+            });
+        }
+
+        if (payload.eventType === "UPDATE") {
+          // Pedido atualizado: substitui na lista
+          supabase
+            .from("pedido")
+            .select(`*, usuario(nome_usu, email_usu), itens_pedido(*,sacola(nome_sac, tipo_sac),cores(nome_cor))`)
+            .eq("id_ped", payload.new.id_ped)
+            .single()
+            .then(({ data }) => {
+              if (data) setPedidos((prev) =>
+                prev.map((p) => p.id_ped === data.id_ped ? data : p)
+              );
+            });
+        }
+      }
+    )
+    .subscribe();
+
+  //  Cancela a inscrição ao sair da página
+  return () => {
+    supabase.removeChannel(canal);
+  };
+}, []);
+
 
   const [pedidoSelecionado, setPedidoSelecionado] = useState(null);
   const [imagemAberta, setImagemAberta] = useState(null);

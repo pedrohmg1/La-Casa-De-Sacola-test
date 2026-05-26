@@ -191,6 +191,7 @@ export default function CarrinhoPage() {
   
       const dadosPedido = {
         pedidoId: pedidoId,
+        metodoPagamento: metodoPagamento,
         items: cartItems.map((item) => ({
           id: item.id_sac,
           title: `${item.nome_sac} - ${item.tamanho_sac}`,
@@ -448,13 +449,17 @@ export default function CarrinhoPage() {
                     </div>
                   </div>
 
+                  <div className="flex flex-col items-center select-none">
+
                   <button 
                     onClick={finalizarCompra}
                     disabled={loading || cartItems.length === 0 || !tipoFrete || (tipoFrete === "correios" && valorFrete === 0)}
-                    className="w-full bg-[#264f41] hover:bg-[#1a362c] text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-[#264f41]/20 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#264f41] hover:bg-[#1a362c] text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-[#264f41]/20 mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? "Processando e Redirecionando..." : "Finalizar Compra"}
                   </button>
+                  <p className="text-[12px] text-[#6b9e8a] font-bold uppercase">Pagamento via Mercado Pago</p>
+                  </div> 
 
                 </div>
               </div>
