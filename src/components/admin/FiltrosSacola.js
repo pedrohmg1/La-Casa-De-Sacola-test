@@ -1,13 +1,7 @@
 import * as Checkbox from "@radix-ui/react-checkbox";
-import { CheckIcon, PlusIcon } from "@radix-ui/react-icons";
+import { CheckIcon, PlusIcon, Pencil2Icon } from "@radix-ui/react-icons";
 
-export default function FiltrosSacola({
-  mostrarAtivas,
-  setMostrarAtivas,
-  mostrarOcultas,
-  setMostrarOcultas,
-  onAbrirNovaSacola,
-}) {
+export default function FiltrosSacola({ mostrarAtivas, setMostrarAtivas, mostrarOcultas, setMostrarOcultas, onAbrirNovaSacola, onAbrirGerenciarCores }) {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-[#e4f4ed] mb-5 gap-4">
       <div id="filtros-sacola" className="flex items-center gap-6">
@@ -40,13 +34,23 @@ export default function FiltrosSacola({
         </label>
       </div>
 
-      <button
-        id="btn-adicionar-sacola"
-        onClick={onAbrirNovaSacola}
-        className="bg-[#264f41] hover:bg-[#403c37] text-white px-5 py-2.5 rounded-xl font-bold transition shadow-md flex items-center gap-2 text-sm lg:text-md w-full sm:w-auto justify-center"
-      >
-        <PlusIcon className="size-5 lg:size-6" /> Adicionar Sacola
-      </button>
+      <div className="flex gap-3">
+        <button
+          id="btn-gerenciar-cores"
+          onClick={onAbrirGerenciarCores}
+          className="bg-white hover:bg-[#f0faf5] text-[#264f41] border border-[#264f41] px-5 py-2.5 rounded-xl font-bold transition shadow-sm flex items-center gap-2 text-sm w-full sm:w-auto justify-center"
+        >
+          <Pencil2Icon className="size-5" /> Gerenciar Cores
+        </button>
+
+        <button
+          id="btn-adicionar-sacola"
+          onClick={onAbrirNovaSacola}
+          className="bg-[#264f41] hover:bg-[#403c37] text-white px-5 py-2.5 rounded-xl font-bold transition shadow-md flex items-center gap-2 text-sm w-full sm:w-auto justify-center"
+        >
+          <PlusIcon className="size-5" /> Adicionar Sacola
+        </button>
+      </div>
     </div>
   );
 }

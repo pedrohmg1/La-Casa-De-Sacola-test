@@ -3,18 +3,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { toast } from "react-hot-toast";
 
 export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
-  const [sacolas, setSacolas] = useState([
-    {
-      id_sac: 1,
-      nome_sac: "Carregando",
-      tipo_sac: "Carregando",
-      quantidademin_sac: 0,
-      precounitario_sac: 0,
-      tamanho_sac: "Carregando",
-      peso_sac: "Carregando",
-      status_sac: "Carregando",
-    },
-  ]);
+  const [sacolas, setSacolas] = useState([]);
+  const [carregandoSacolas, setCarregandoSacolas] = useState(true);
 
   const [novaSacola, setNovaSacola] = useState({
     nome_sac: "",
@@ -44,17 +34,19 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
   // Criamos a função que vai até a nuvem
   const carregarSacolas = async () => {
     // Pedimos tudo (*) de uma tabela específica
+    setCarregandoSacolas(true);
     const { data, error } = await supabase.from("sacola").select("*");
 
     if (error) {
       console.error("Erro ao buscar as sacolas:", error);
+      toast.error("Não foi possível carregar as sacolas.");
+      setCarregandoSacolas(false);
       return; // Se der erro, paramos por aqui
     }
 
-    if (data) {
-      // Se a resposta chegou, colocamos os dados na nossa lista principal!
-      setSacolas(data);
-    }
+    if (data) setSacolas(data);
+    // Se a resposta chegou, colocamos os dados na nossa lista principal!
+    setCarregandoSacolas(false);
   };
 
   const handleAbrirEdicao = (sacolaEscolhida) => {
@@ -97,7 +89,7 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
     // Os "..." copiam as sacolas antigas, e colocamos a "sacolaPronta" no final
     if (sacolaEditandoId) {
       // ---------------- MODO EDIÇÃO ----------------
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("sacola")
         .update({
           tipo_sac: novaSacola.tipo_sac,
@@ -108,20 +100,13 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
           nome_sac: novaSacola.nome_sac,
           status_sac: novaSacola.status_sac,
         })
-        .eq("id_sac", sacolaEditandoId)
-        .select();
+        .eq("id_sac", sacolaEditandoId);
 
       if (error) {
         console.error("Erro ao editar:", error);
-      } else if (data) {
-        // 👈 AQUI ESTÁ A MÁGICA: se data[0] for undefined, usamos o { ...sacola, ...novaSacola }
-        const sacolasAtualizadas = sacolas.map((sacola) =>
-          sacola.id_sac === sacolaEditandoId
-            ? data[0] || { ...sacola, ...novaSacola }
-            : sacola
-        );
-        setSacolas(sacolasAtualizadas);
-        // Passo 3: Limpa o formulário de volta ao estado inicial
+        toast.error("Não foi possível atualizar a sacola.");
+      } else {
+        await carregarSacolas();
         setNovaSacola({
           nome_sac: "",
           tipo_sac: "",
@@ -131,20 +116,15 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
           peso_sac: "",
           status_sac: "",
         });
-
-        // Passo 4: Fecha a janela do Radix
         setModalAberto(false);
         setSacolaEditandoId(null);
         toast.success("Sacola atualizada.");
       }
     } else {
       // ---------------- MODO CRIAÇÃO ----------------
-      const { data, error } = await supabase
-        .from("sacola")
-        .insert([sacolaPronta])
-        .select();
+      const { data, error } = await supabase.from("sacola").insert([sacolaPronta]).select();
 
-        if (error) {
+      if (error) {
         console.error("Erro ao criar:", error);
       } else if (data && data[0]) {
         // 👈 Protegemos aqui também para evitar inserir undefined
@@ -169,22 +149,13 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
   };
 
   const handleOcultarSacola = async () => {
-    const { error } = await supabase
-      .from("sacola")
-      .update({ status_sac: "Oculto" })
-      .eq("id_sac", sacolaEditandoId);
+    const { error } = await supabase.from("sacola").update({ status_sac: "Oculto" }).eq("id_sac", sacolaEditandoId);
 
     if (error) {
       console.error("Erro ao ocultar sacola:", error);
       toast.error("Não foi possível excluir a Sacola.");
     } else {
-      setSacolas((prevSacolas) =>
-        prevSacolas.map((sacola) =>
-          sacola.id_sac === sacolaEditandoId
-            ? { ...sacola, status_sac: "Oculto" }
-            : sacola
-        )
-      );
+      setSacolas((prevSacolas) => prevSacolas.map((sacola) => (sacola.id_sac === sacolaEditandoId ? { ...sacola, status_sac: "Oculto" } : sacola)));
       setModalAberto(false);
       setSacolaEditandoId(null);
       toast.success("Sacola Excluída.");
@@ -216,5 +187,6 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
     handleAbrirEdicao,
     handleAbrirNovaSacola,
     obterCoresDisponiveisParaNovaSacola,
+    carregandoSacolas,
   };
 }

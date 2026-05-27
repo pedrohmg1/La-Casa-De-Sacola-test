@@ -1,18 +1,15 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { toast } from "react-hot-toast";
 import { salvarCorNoBanco, excluirCorNoBanco } from "@/services/coresService";
 import {
   adicionarCorLocal,
   removerCorLocal,
 } from "@/components/admin/coresMaterialLogic";
 
-// Valor padrão vazio evita o crash se nada for passado
-export function useCoresMaterial({ carregarFiltros = () => {} } = {}) {
+export function useCoresMaterial({ carregarFiltros = () => {}, toastPainel = () => {} } = {}) {
   const [coresPorMaterial, setCoresPorMaterial] = useState({});
   const [coresPrincipais, setCoresPrincipais] = useState([]);
-  const [coresSelecionadasPorMaterial, setCoresSelecionadasPorMaterial] =
-    useState({});
+  const [coresSelecionadasPorMaterial, setCoresSelecionadasPorMaterial] = useState({});
   const [novaCorNome, setNovaCorNome] = useState("");
   const [novaCorHex, setNovaCorHex] = useState("#000000");
   const [modalEditarCoresAberto, setModalEditarCoresAberto] = useState(false);
@@ -25,17 +22,16 @@ export function useCoresMaterial({ carregarFiltros = () => {} } = {}) {
 
     if (error) {
       console.error("Erro ao buscar cores:", error);
+      toastPainel("error", "Não foi possível carregar as cores.");
       return;
     }
 
     if (data) {
-      const coresFormatadas = data.map((c) => ({
+      setCoresPrincipais(data.map((c) => ({
         nome: c.nome_cor,
         hex: c.hex_cor,
         id: c.id_cor,
-      }));
-
-      setCoresPrincipais(coresFormatadas);
+      })));
     }
   };
 
@@ -57,37 +53,35 @@ export function useCoresMaterial({ carregarFiltros = () => {} } = {}) {
     setCoresSelecionadasPorMaterial((anterior) => ({
       ...anterior,
       [chave]: existe
-        ? coresAtuais.filter(
-            (selecionada) =>
-              !(selecionada.nome === cor.nome && selecionada.hex === cor.hex)
+        ? coresAtuais.filter((selecionada) =>
+            !(selecionada.nome === cor.nome && selecionada.hex === cor.hex)
           )
         : [...coresAtuais, cor],
     }));
   };
 
   const handleExcluirCorLocal = async (nomeMaterial, cor) => {
-    //  EXCLUI NO BANCO
     if (cor.id) {
-      const sucesso = await excluirCorNoBanco(cor.id);
+      const resultado = await excluirCorNoBanco(cor.id);
 
-      if (!sucesso) return;
+      if (!resultado.ok) {
+        toastPainel("error", resultado.mensagem);
+        return;
+      }
 
       await carregarCores();
       await carregarFiltros();
 
       setCoresSelecionadasPorMaterial((prev) => {
         const novo = {};
-
         Object.keys(prev).forEach((material) => {
           novo[material] = prev[material].filter((c) => c.id !== cor.id);
         });
-
         return novo;
-      }); //  ESSENCIAL
+      });
     }
 
-    // continua sua lógica local
-    const resultado = removerCorLocal({
+    const resultadoLocal = removerCorLocal({
       nomeMaterial,
       cor,
       coresPrincipais,
@@ -95,24 +89,24 @@ export function useCoresMaterial({ carregarFiltros = () => {} } = {}) {
       coresSelecionadasPorMaterial,
     });
 
-    if (!resultado.ok) return;
+    if (!resultadoLocal.ok) return;
 
     setCoresSelecionadasPorMaterial(
-      resultado.coresSelecionadasPorMaterialAtualizadas
+      resultadoLocal.coresSelecionadasPorMaterialAtualizadas
     );
 
-    if (resultado.tipo === "principal") {
-      setCoresPrincipais(resultado.coresPrincipaisAtualizadas);
+    if (resultadoLocal.tipo === "principal") {
+      setCoresPrincipais(resultadoLocal.coresPrincipaisAtualizadas);
     }
 
-    if (resultado.tipo === "material") {
+    if (resultadoLocal.tipo === "material") {
       setCoresPorMaterial((anterior) => ({
         ...anterior,
-        [resultado.materialNormalizado]: resultado.coresDoMaterialAtualizadas,
+        [resultadoLocal.materialNormalizado]: resultadoLocal.coresDoMaterialAtualizadas,
       }));
     }
 
-    toast.success("Cor excluída.");
+    toastPainel("success", "Cor excluída.");
   };
 
   const resetFormularioCor = () => {
@@ -129,24 +123,25 @@ export function useCoresMaterial({ carregarFiltros = () => {} } = {}) {
       coresPorMaterial,
     });
 
-     if (!resultado.ok) {
-       toast.error(resultado.mensagem || "Falha ao salvar cor.");
+    if (!resultado.ok) {
+      toastPainel("error", resultado.mensagem || "Falha ao salvar cor.");
       return;
     }
 
-    // SALVA NO BANCO
     const corSalva = await salvarCorNoBanco(novaCorNome, novaCorHex);
 
-    if (!corSalva) return;
+    if (!corSalva.ok) {
+      toastPainel("error", corSalva.mensagem);
+      return;
+    }
 
-    // continua sua lógica normal
     if (resultado.tipo === "principal") {
       setCoresPrincipais((prev) => [
         ...prev,
         {
-          id: corSalva.id_cor,
-          nome: corSalva.nome_cor,
-          hex: corSalva.hex_cor,
+          id: corSalva.dados.id_cor,
+          nome: corSalva.dados.nome_cor,
+          hex: corSalva.dados.hex_cor,
         },
       ]);
     }
@@ -160,8 +155,7 @@ export function useCoresMaterial({ carregarFiltros = () => {} } = {}) {
 
     setNovaCorNome("");
     setNovaCorHex("#000000");
-
-    toast.success("Cor adicionada.");
+    toastPainel("success", "Cor adicionada.");
   };
 
   return {

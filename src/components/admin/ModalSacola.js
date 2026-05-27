@@ -8,6 +8,7 @@ import {
   ExclamationTriangleIcon,
   GearIcon,
   TrashIcon,
+  PlusIcon
 } from "@radix-ui/react-icons";
 
 /**
@@ -151,61 +152,155 @@ export default function ModalSacola({
               </div>
             </div>
 
-            {/* Peso + Tamanho */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-xs lg:text-sm select-none text-gray-700">
-                  Peso
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: 50g"
-                  className="border border-gray-300 p-3 rounded-xl outline-none focus:border-[#5ab58f] transition text-sm lg:text-md font-extralight"
-                  value={sacola.peso_sac}
-                  onChange={(e) => onSacolaChange({ ...sacola, peso_sac: e.target.value })}
-                  required
-                />
-              </div>
+{/* Peso */}
+<div className="flex flex-col gap-1">
+  <label className="font-bold text-xs lg:text-sm select-none text-gray-700">
+    Peso (Aplicado a todos os tamanhos)
+  </label>
+  <input
+    type="text"
+    placeholder="Ex: 50g"
+    className="border border-gray-300 p-3 rounded-xl outline-none focus:border-[#5ab58f] transition text-sm lg:text-md font-extralight"
+    value={sacola.peso_sac}
+    onChange={(e) => onSacolaChange({ ...sacola, peso_sac: e.target.value })}
+    required
+  />
+</div>
 
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-xs lg:text-sm select-none text-gray-700">
-                  Tamanho
-                </label>
-                <div className="flex gap-2">
-                  <Select.Root
-                    value={sacola.tamanho_sac}
-                    onValueChange={(v) => onSacolaChange({ ...sacola, tamanho_sac: v })}
-                  >
-                    <Select.Trigger className="flex flex-1 items-center justify-between border border-gray-300 p-3 rounded-xl bg-white focus:border-[#5ab58f] outline-none transition text-sm lg:text-md font-extralight">
-                      <Select.Value placeholder="Selecione o tamanho..." />
-                    </Select.Trigger>
-                    <Select.Portal>
-                      <Select.Content className="bg-white rounded-xl shadow-2xl border border-gray-200 z-[110]">
-                        <Select.Viewport className="p-2">
-                          {opcoesTamanho.map((t) => (
-                            <Select.Item
-                              key={t.id_tam}
-                              value={t.tamanho_tam}
-                              className="p-3 rounded-lg outline-none cursor-pointer hover:bg-[#f0faf5] focus:bg-[#f0faf5] transition text-sm lg:text-md font-extralight"
-                            >
-                              <Select.ItemText>{t.tamanho_tam}</Select.ItemText>
-                            </Select.Item>
-                          ))}
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select.Portal>
-                  </Select.Root>
+{/* Vínculo de Tamanhos */}
+<div className="flex flex-col gap-3 mt-2 border-t border-gray-100 pt-5">
+  <div className="flex justify-between items-center mb-1">
+    <label className="font-bold text-sm lg:text-md select-none text-gray-700">
+      Tamanhos Disponíveis, Preço e Qtd. Mínima
+    </label>
+    <button
+      type="button"
+      onClick={() => onSacolaChange({
+        ...sacola,
+        sacola_tamanho: [...(sacola.sacola_tamanho || []), { tam_id: "", preco: "", qtd_minima: "", ativo: true }]
+      })}
+      className="flex items-center gap-1 text-xs bg-[#f0faf5] text-[#3ca779] px-3 py-2 rounded-lg font-bold hover:bg-[#c8e3d5] transition border border-[#c8e3d5]"
+    >
+      <PlusIcon /> Adicionar Tamanho
+    </button>
+  </div>
 
-                  <button
-                    type="button"
-                    onClick={onAbrirGerenciarTamanho}
-                    className="p-3 border border-gray-300 rounded-xl hover:bg-gray-50 cursor-pointer transition"
-                  >
-                    <GearIcon />
-                  </button>
-                </div>
-              </div>
-            </div>
+  {(sacola.sacola_tamanho || []).map((tamanhoVinculo, index) => (
+    <div key={index} className="grid grid-cols-[1.5fr_1fr_1fr_auto_auto] gap-3 items-end bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm relative">
+      
+      {/* Select Tamanho */}
+      <div className="flex flex-col gap-1">
+        <label className="font-bold text-xs text-gray-600 flex items-center justify-between">
+          Tamanho
+          <button
+            type="button"
+            onClick={onAbrirGerenciarTamanho}
+            className="text-[#3ca779] hover:text-[#2e8f65] transition"
+            title="Gerenciar Tamanhos Globais"
+          >
+            <GearIcon className="size-3.5" />
+          </button>
+        </label>
+        <Select.Root
+          value={String(tamanhoVinculo.tam_id || "")}
+          onValueChange={(v) => {
+            const novosTamanhos = [...sacola.sacola_tamanho];
+            novosTamanhos[index].tam_id = v;
+            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+          }}
+        >
+          <Select.Trigger className="flex w-full items-center justify-between border border-gray-300 p-2.5 rounded-lg bg-white focus:border-[#5ab58f] outline-none text-sm transition">
+            <Select.Value placeholder="Selecione..." />
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content className="bg-white rounded-xl shadow-2xl border border-gray-200 z-[120]">
+              <Select.Viewport className="p-2">
+                {opcoesTamanho.map((t) => (
+                  <Select.Item key={t.id_tam} value={String(t.id_tam)} className="p-2.5 rounded-lg outline-none cursor-pointer hover:bg-[#f0faf5] text-sm">
+                    <Select.ItemText>{t.tamanho_tam}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+      </div>
+
+      {/* Input Qtd Mínima */}
+      <div className="flex flex-col gap-1">
+        <label className="font-bold text-xs text-gray-600">Qtd. Mín</label>
+        <input
+          type="number"
+          min="1"
+          placeholder="Ex: 100"
+          className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+          value={tamanhoVinculo.qtd_minima}
+          onChange={(e) => {
+            const novosTamanhos = [...sacola.sacola_tamanho];
+            novosTamanhos[index].qtd_minima = e.target.value;
+            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+          }}
+          required
+        />
+      </div>
+
+      {/* Input Preço */}
+      <div className="flex flex-col gap-1">
+        <label className="font-bold text-xs text-gray-600">Preço (R$)</label>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Ex: 1.50"
+          className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+          value={tamanhoVinculo.preco}
+          onChange={(e) => {
+            const novosTamanhos = [...sacola.sacola_tamanho];
+            novosTamanhos[index].preco = e.target.value;
+            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+          }}
+          required
+        />
+      </div>
+
+      {/* Toggle Ativo */}
+      <div className="flex flex-col gap-1">
+        <label className="font-bold text-xs text-gray-600 text-center">Ativo</label>
+        <button
+          type="button"
+          onClick={() => {
+            const novosTamanhos = [...sacola.sacola_tamanho];
+            novosTamanhos[index].ativo = !novosTamanhos[index].ativo;
+            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+          }}
+          className={`p-2.5 rounded-lg border text-sm font-bold transition-all min-w-[3.5rem] ${tamanhoVinculo.ativo !== false ? 'bg-[#e0f5ea] text-[#2e8f65] border-[#c8e3d5]' : 'bg-gray-200 text-gray-500 border-gray-300'}`}
+        >
+          {tamanhoVinculo.ativo !== false ? 'Sim' : 'Não'}
+        </button>
+      </div>
+
+      {/* Remover */}
+      <button
+        type="button"
+        onClick={() => {
+          const novosTamanhos = sacola.sacola_tamanho.filter((_, i) => i !== index);
+          onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+        }}
+        className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition self-end border border-red-100 h-[42px]"
+        title="Remover vínculo"
+      >
+        <TrashIcon className="size-5" />
+      </button>
+    </div>
+  ))}
+  
+  {(!sacola.sacola_tamanho || sacola.sacola_tamanho.length === 0) && (
+    <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-red-600 text-sm font-bold mt-2">
+      <ExclamationTriangleIcon className="size-5" />
+      Nenhum tamanho vinculado. Adicione ao menos um para prosseguir.
+    </div>
+  )}
+</div>
 
             {/* Status */}
             <div className="flex flex-col gap-1">

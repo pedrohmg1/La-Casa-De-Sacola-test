@@ -1,6 +1,16 @@
 import { EyeClosedIcon, Pencil2Icon } from "@radix-ui/react-icons";
 
-export default function TabelaSacolas({ sacolasFiltradas, onAbrirEdicao }) {
+export default function TabelaSacolas({ sacolasFiltradas, onAbrirEdicao, carregando }) {
+  if (carregando) {
+    return (
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-[#e4f4ed] flex items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-3 text-[#6b9e8a]">
+          <div className="w-8 h-8 border-4 border-[#3ca779] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold">Carregando sacolas...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       id="tabela-sacolas"

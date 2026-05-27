@@ -38,7 +38,7 @@ export default function Painel() {
     toast.success(mensagem);
   };
 
-  const cores = useCoresMaterial(); // sem argumento por enquanto
+  const cores = useCoresMaterial({ toastPainel });
 
   // Agora passamos tudo que o useEnum precisa para funcionar
   const enum_ = useEnum({
@@ -64,6 +64,7 @@ export default function Painel() {
     setMostrarSacolasAtivas,
     mostrarSacolasOcultas,
     setMostrarSacolasOcultas,
+    carregandoSacolas
   } = useSacolas({
     obterCoresSelecionadasDoMaterial: cores.obterCoresSelecionadasDoMaterial,
   });
@@ -178,12 +179,14 @@ export default function Painel() {
           mostrarOcultas={mostrarSacolasOcultas}
           setMostrarOcultas={setMostrarSacolasOcultas}
           onAbrirNovaSacola={handleAbrirNovaSacola}
+          onAbrirGerenciarCores={() => cores.setModalEditarCoresAberto(true)}
         />
 
         <TabelaSacolas
           id="tabela-sacolas"
           sacolasFiltradas={sacolasFiltradas}
           onAbrirEdicao={handleAbrirEdicao}
+          carregando={carregandoSacolas}
         />
 
         <ModalGerenciarEnum enum_={enum_} cores={cores} />
