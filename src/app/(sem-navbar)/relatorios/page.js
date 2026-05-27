@@ -6,6 +6,7 @@ import RotaAdmin from "@/components/admin/rotaAdmin";
 import { useRelatorios } from "@/hooks/useRelatorios";
 import { exportarParaPDF } from "../exportacao/exportacao";
 import useTour from "@/hooks/useTour";
+import * as Tabs from "@radix-ui/react-tabs";
 
 const formatoMoeda = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -76,6 +77,7 @@ export default function Relatorios() {
     tiposData,
     statusData,
     faturamentoMensal,
+    combinacoes,
     totais,
     loading,
     carregarRelatorios,
@@ -108,7 +110,7 @@ export default function Relatorios() {
         element: "#cards-totais",
         popover: {
           title: "Métricas Gerais",
-          description:`
+          description: `
             Aqui você encontra:
             <ul class="list-disc pl-5 mt-2 space-y-1">
             <li>O quanto lucrou</li>
@@ -124,7 +126,7 @@ export default function Relatorios() {
         popover: {
           title: "Baixar Dados",
           description:
-            "Clique aqui para baixar todas os dados em arquivo <i>PDF</i>.",
+            "Clique aqui para baixar todos os dados em arquivo <i>PDF</i>.",
           side: "top",
         },
       },
@@ -176,210 +178,295 @@ export default function Relatorios() {
           </h2>
         </div>
 
-        <div id="cards-totais" className="flex flex-wrap gap-4 mb-8">
-          <CardTotal
-            titulo="Total de Pedidos"
-            valor={totais.pedidos}
-            cor="text-[#264f41]"
-          />
-          <CardTotal
-            titulo="Receita Bruta"
-            valor={formatoMoeda(totais.receita)}
-            cor="text-[#3ca779]"
-          />
-          <CardTotal
-            titulo="Sacolas Vendidas"
-            valor={totais.sacolas}
-            cor="text-[#8f0000]"
-          />
-          <CardTotal
-            titulo="Clientes Cadastrados"
-            valor={totais.clientes}
-            cor="text-[#5ab58f]"
-          />
-        </div>
+        <Tabs.Root defaultValue="relatorios" className="flex flex-col flex-1">
+          <Tabs.List className="flex gap-2 mb-6 border-b border-[#e4f4ed]">
+            <Tabs.Trigger
+              value="relatorios"
+              className="px-4 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent data-[state=active]:border-[#5ab58f] data-[state=active]:text-[#264f41] transition-colors"
+            >
+              Relatórios
+            </Tabs.Trigger>
+            <Tabs.Trigger
+              value="estatisticas"
+              className="px-4 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent data-[state=active]:border-[#5ab58f] data-[state=active]:text-[#264f41] transition-colors"
+            >
+              Estatísticas
+            </Tabs.Trigger>
+          </Tabs.List>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
-                Cores Mais Utilizadas
-              </h3>
-              <button
-                id="baixar-dados"
-                onClick={() =>
-                  handleExportarPDF(coresData, "cores_mais_utilizadas.pdf")
-                }
-                disabled={!coresData.length || exportando}
-                className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
-              >
-                {exportando === "cores_mais_utilizadas.pdf"
-                  ? "Exportando..."
-                  : "Exportar PDF"}
-              </button>
+          {/* ABA RELATÓRIOS — conteúdo que já existia */}
+          <Tabs.Content value="relatorios">
+            <div id="cards-totais" className="flex flex-wrap gap-4 mb-8">
+              <CardTotal
+                titulo="Total de Pedidos"
+                valor={totais.pedidos}
+                cor="text-[#264f41]"
+              />
+              <CardTotal
+                titulo="Receita Bruta"
+                valor={formatoMoeda(totais.receita)}
+                cor="text-[#3ca779]"
+              />
+              <CardTotal
+                titulo="Sacolas Vendidas"
+                valor={totais.sacolas}
+                cor="text-[#8f0000]"
+              />
+              <CardTotal
+                titulo="Clientes Cadastrados"
+                valor={totais.clientes}
+                cor="text-[#5ab58f]"
+              />
             </div>
-            {coresData.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">
-                Nenhum dado disponível.
-              </p>
-            ) : (
-              coresData.map((c) => (
-                <GraficoBarraCor
-                  key={c.nome}
-                  label={c.nome}
-                  valor={c.quantidade}
-                  max={maxCor}
-                  hex={c.hex}
-                />
-              ))
-            )}
-          </div>
 
-          <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
-                Tipos de Sacola Mais Pedidos
-              </h3>
-              <button
-                onClick={() => handleExportarPDF(tiposData, "tipos_sacola.pdf")}
-                disabled={!tiposData.length || exportando}
-                className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
-              >
-                {exportando === "tipos_sacola.pdf"
-                  ? "Exportando..."
-                  : "Exportar PDF"}
-              </button>
-            </div>
-            {tiposData.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">
-                Nenhum dado disponível.
-              </p>
-            ) : (
-              tiposData.map((t) => (
-                <Barra
-                  key={t.tipo}
-                  label={t.nome}
-                  valor={t.quantidade}
-                  max={maxTipo}
-                  corBarra="bg-[#5ab58f]"
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
-                Pedidos por Status
-              </h3>
-              <button
-                onClick={() =>
-                  handleExportarPDF(statusData, "pedidos_por_status.pdf")
-                }
-                disabled={!statusData.length || exportando}
-                className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
-              >
-                {exportando === "pedidos_por_status.pdf"
-                  ? "Exportando..."
-                  : "Exportar PDF"}
-              </button>
-            </div>
-            {statusData.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">
-                Nenhum dado disponível.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-[#e4f4ed]">
-                      <th className="py-2 text-xs font-bold text-gray-500 uppercase">
-                        Status
-                      </th>
-                      <th className="py-2 text-xs font-bold text-gray-500 uppercase text-right">
-                        Quantidade
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {statusData.map((s) => (
-                      <tr
-                        key={s.status}
-                        className="border-b border-gray-50 hover:bg-[#f0faf5] transition-colors"
-                      >
-                        <td className="py-2.5 text-sm font-semibold text-[#264f41]">
-                          {s.status}
-                        </td>
-                        <td className="py-2.5 text-sm font-bold text-[#264f41] text-right">
-                          {s.quantidade}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
-                Faturamento Mensal
-              </h3>
-              <button
-                onClick={() =>
-                  handleExportarPDF(
-                    faturamentoMensal.map((f) => ({
-                      ...f,
-                      receita: formatoMoeda(f.receita),
-                    })),
-                    "faturamento_mensal.pdf",
-                  )
-                }
-                disabled={!faturamentoMensal.length || exportando}
-                className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
-              >
-                {exportando === "faturamento_mensal.pdf"
-                  ? "Exportando..."
-                  : "Exportar PDF"}
-              </button>
-            </div>
-            {faturamentoMensal.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">
-                Nenhum dado disponível.
-              </p>
-            ) : (
-              <div>
-                {faturamentoMensal.map((f) => (
-                  <Barra
-                    key={f.mes}
-                    label={f.mes}
-                    valor={f.pedidos}
-                    max={Math.max(...faturamentoMensal.map((x) => x.pedidos))}
-                    corBarra="bg-[#8f0000]"
-                  />
-                ))}
-                <div className="mt-3 pt-3 border-t border-[#e4f4ed]">
-                  {faturamentoMensal.map((f) => (
-                    <div
-                      key={`rec-${f.mes}`}
-                      className="flex justify-between text-xs mb-1"
-                    >
-                      <span className="font-semibold text-gray-500">
-                        {f.mes}
-                      </span>
-                      <span className="font-bold text-[#3ca779]">
-                        {formatoMoeda(f.receita)}
-                      </span>
-                    </div>
-                  ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* card cores */}
+              <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
+                    Cores Mais Utilizadas
+                  </h3>
+                  <button
+                    id="baixar-dados"
+                    onClick={() =>
+                      handleExportarPDF(coresData, "cores_mais_utilizadas.pdf")
+                    }
+                    disabled={!coresData.length || exportando}
+                    className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
+                  >
+                    {exportando === "cores_mais_utilizadas.pdf"
+                      ? "Exportando..."
+                      : "Exportar PDF"}
+                  </button>
                 </div>
+                {coresData.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">
+                    Nenhum dado disponível.
+                  </p>
+                ) : (
+                  coresData.map((c) => (
+                    <GraficoBarraCor
+                      key={c.nome}
+                      label={c.nome}
+                      valor={c.quantidade}
+                      max={maxCor}
+                      hex={c.hex}
+                    />
+                  ))
+                )}
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* card tipos */}
+              <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
+                    Tipos de Sacola Mais Pedidos
+                  </h3>
+                  <button
+                    onClick={() =>
+                      handleExportarPDF(tiposData, "tipos_sacola.pdf")
+                    }
+                    disabled={!tiposData.length || exportando}
+                    className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
+                  >
+                    {exportando === "tipos_sacola.pdf"
+                      ? "Exportando..."
+                      : "Exportar PDF"}
+                  </button>
+                </div>
+                {tiposData.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">
+                    Nenhum dado disponível.
+                  </p>
+                ) : (
+                  tiposData.map((t) => (
+                    <Barra
+                      key={t.tipo}
+                      label={t.nome}
+                      valor={t.quantidade}
+                      max={maxTipo}
+                      corBarra="bg-[#5ab58f]"
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* card status */}
+              <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
+                    Pedidos por Status
+                  </h3>
+                  <button
+                    onClick={() =>
+                      handleExportarPDF(statusData, "pedidos_por_status.pdf")
+                    }
+                    disabled={!statusData.length || exportando}
+                    className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
+                  >
+                    {exportando === "pedidos_por_status.pdf"
+                      ? "Exportando..."
+                      : "Exportar PDF"}
+                  </button>
+                </div>
+                {statusData.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">
+                    Nenhum dado disponível.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-[#e4f4ed]">
+                          <th className="py-2 text-xs font-bold text-gray-500 uppercase">
+                            Status
+                          </th>
+                          <th className="py-2 text-xs font-bold text-gray-500 uppercase text-right">
+                            Quantidade
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {statusData.map((s) => (
+                          <tr
+                            key={s.status}
+                            className="border-b border-gray-50 hover:bg-[#f0faf5] transition-colors"
+                          >
+                            <td className="py-2.5 text-sm font-semibold text-[#264f41]">
+                              {s.status}
+                            </td>
+                            <td className="py-2.5 text-sm font-bold text-[#264f41] text-right">
+                              {s.quantidade}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* card faturamento */}
+              <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
+                    Faturamento Mensal
+                  </h3>
+                  <button
+                    onClick={() =>
+                      handleExportarPDF(
+                        faturamentoMensal.map((f) => ({
+                          ...f,
+                          receita: formatoMoeda(f.receita),
+                        })),
+                        "faturamento_mensal.pdf",
+                      )
+                    }
+                    disabled={!faturamentoMensal.length || exportando}
+                    className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
+                  >
+                    {exportando === "faturamento_mensal.pdf"
+                      ? "Exportando..."
+                      : "Exportar PDF"}
+                  </button>
+                </div>
+                {faturamentoMensal.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">
+                    Nenhum dado disponível.
+                  </p>
+                ) : (
+                  <div>
+                    {faturamentoMensal.map((f) => (
+                      <Barra
+                        key={f.mes}
+                        label={f.mes}
+                        valor={f.pedidos}
+                        max={Math.max(
+                          ...faturamentoMensal.map((x) => x.pedidos),
+                        )}
+                        corBarra="bg-[#8f0000]"
+                      />
+                    ))}
+                    <div className="mt-3 pt-3 border-t border-[#e4f4ed]">
+                      {faturamentoMensal.map((f) => (
+                        <div
+                          key={`rec-${f.mes}`}
+                          className="flex justify-between text-xs mb-1"
+                        >
+                          <span className="font-semibold text-gray-500">
+                            {f.mes}
+                          </span>
+                          <span className="font-bold text-[#3ca779]">
+                            {formatoMoeda(f.receita)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Tabs.Content>
+
+          {/* ABA ESTATÍSTICAS — nova */}
+          <Tabs.Content value="estatisticas">
+            {/* KPIs do mês */}
+            <div className="flex flex-wrap gap-4 mb-8">
+              <CardTotal
+                titulo="Vendas no Mês Atual"
+                valor={formatoMoeda(totais.receitaMesAtual)}
+                cor="text-[#3ca779]"
+              />
+              <CardTotal
+                titulo="Ticket Médio"
+                valor={formatoMoeda(totais.ticketMedio)}
+                cor="text-[#264f41]"
+              />
+              <CardTotal
+                titulo="Produto Destaque"
+                valor={totais.produtoDestaque}
+                cor="text-[#5ab58f]"
+              />
+            </div>
+
+            {/* Combinações mais pedidas */}
+            <div className="bg-white border border-[#e4f4ed] rounded-xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-extrabold text-[#264f41] uppercase tracking-wide">
+                  Combinações Mais Pedidas
+                </h3>
+                <button
+                  onClick={() =>
+                    handleExportarPDF(combinacoes, "combinacoes.pdf")
+                  }
+                  disabled={!combinacoes.length || exportando}
+                  className="text-xs font-bold text-[#5ab58f] hover:text-[#2e8f65] transition-colors"
+                >
+                  {exportando === "combinacoes.pdf"
+                    ? "Exportando..."
+                    : "Exportar PDF"}
+                </button>
+              </div>
+              {combinacoes.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">
+                  Nenhum dado disponível.
+                </p>
+              ) : (
+                combinacoes.map((c) => (
+                  <Barra
+                    key={c.nome}
+                    label={c.nome}
+                    valor={c.quantidade}
+                    max={combinacoes[0].quantidade}
+                    corBarra="bg-[#264f41]"
+                  />
+                ))
+              )}
+            </div>
+          </Tabs.Content>
+        </Tabs.Root>
 
         <div className="mt-8 flex justify-end">
           <button

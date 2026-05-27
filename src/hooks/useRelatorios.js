@@ -6,11 +6,15 @@ export function useRelatorios() {
   const [tiposData, setTiposData] = useState([]);
   const [statusData, setStatusData] = useState([]);
   const [faturamentoMensal, setFaturamentoMensal] = useState([]);
+  const [combinacoes, setCombinacoes] = useState([]);
   const [totais, setTotais] = useState({
     pedidos: 0,
     receita: 0,
     sacolas: 0,
     clientes: 0,
+    ticketMedio: 0,
+    receitaMesAtual: 0,
+    produtoDestaque: "—",
   });
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +46,7 @@ export function useRelatorios() {
     const tiposMap = {};
     const statusMap = {};
     const faturamentoMap = {};
+    const combinacoesMap = {};
     let totalSacolas = 0;
     let totalReceita = 0;
 
@@ -57,16 +62,24 @@ export function useRelatorios() {
         const qtd = item.quantidade || 0;
         totalSacolas += qtd;
 
+        // cores
         const cor = item.cores?.nome_cor || "Sem cor";
         const hex = item.cores?.hex_cor || "#cccccc";
         if (!coresMap[cor]) coresMap[cor] = { nome: cor, hex, quantidade: 0 };
         coresMap[cor].quantidade += qtd;
 
+        // tipos
         const tipo = item.sacola?.tipo_sac || "Indefinido";
         const nomeSac = item.sacola?.nome_sac || tipo;
         if (!tiposMap[tipo])
           tiposMap[tipo] = { tipo, nome: nomeSac, quantidade: 0 };
         tiposMap[tipo].quantidade += qtd;
+
+        // combinação sacola + cor
+        const combinacaoKey = `${item.sacola?.nome_sac || "?"} + ${item.cores?.nome_cor || "?"}`;
+        if (!combinacoesMap[combinacaoKey])
+          combinacoesMap[combinacaoKey] = { nome: combinacaoKey, quantidade: 0 };
+        combinacoesMap[combinacaoKey].quantidade += qtd;
       });
     }
 
@@ -91,6 +104,19 @@ export function useRelatorios() {
       });
     }
 
+    const mesAtual = new Date().toISOString().substring(0, 7);
+    const receitaMesAtual = faturamentoMap[mesAtual]?.receita || 0;
+
+    const pedidosValidos = (pedidos || []).filter(
+      (p) => p.status_ped !== "No Carrinho" && p.status_ped !== "Cancelado",
+    );
+    const ticketMedio =
+      pedidosValidos.length > 0 ? totalReceita / pedidosValidos.length : 0;
+
+    const produtoDestaque =
+      Object.values(tiposMap).sort((a, b) => b.quantidade - a.quantidade)[0]
+        ?.nome || "—";
+
     setCoresData(
       Object.values(coresMap).sort((a, b) => b.quantidade - a.quantidade),
     );
@@ -101,13 +127,23 @@ export function useRelatorios() {
       Object.values(statusMap).sort((a, b) => b.quantidade - a.quantidade),
     );
     setFaturamentoMensal(
-      Object.values(faturamentoMap).sort((a, b) => a.mes.localeCompare(b.mes)),
+      Object.values(faturamentoMap).sort((a, b) =>
+        a.mes.localeCompare(b.mes),
+      ),
+    );
+    setCombinacoes(
+      Object.values(combinacoesMap)
+        .sort((a, b) => b.quantidade - a.quantidade)
+        .slice(0, 10),
     );
     setTotais({
       pedidos: pedidos?.length || 0,
       receita: totalReceita,
       sacolas: totalSacolas,
       clientes: contagemUsuarios || 0,
+      ticketMedio,
+      receitaMesAtual,
+      produtoDestaque,
     });
     setLoading(false);
   };
@@ -121,6 +157,7 @@ export function useRelatorios() {
     tiposData,
     statusData,
     faturamentoMensal,
+    combinacoes,
     totais,
     loading,
     carregarRelatorios,
