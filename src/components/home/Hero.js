@@ -1,10 +1,27 @@
 "use client";
 import Link from "next/link";
-import { 
-  ArrowDownIcon
-} from "@radix-ui/react-icons";
+import { ArrowDownIcon } from "@radix-ui/react-icons";
+import { useState, useEffect } from "react";
 
 export default function Hero() {
+  // Array com as imagens que vão ficar passando
+  const images = [
+    "/img/sacola.png",
+    "/img/imagem sacola carrosel 2.avif", // Coloque o caminho de outras imagens reais aqui
+    "/img/imagem sacola carrossel.avif" // Se não tiver essas, coloque as que existem na sua pasta public/img
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Efeito para trocar a imagem a cada 4 segundos
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 4000); // 4000ms = 4 segundos. Pode alterar esse valor se quiser.
+    
+    return () => clearInterval(timer);
+  }, [images.length]);
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#292622] via-[#1a3828] to-[#5ab58f] min-h-[92vh] flex items-center">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -54,17 +71,23 @@ export default function Hero() {
                 className="inline-flex items-center justify-center gap-2 border border-[#f4f7f5]/40 text-[#f4f7f5] hover:bg-[#f4f7f5]/10 font-semibold text-base px-8 py-4 rounded-2xl transition-all"
               >
                 Ver Modelos
-                <ArrowDownIcon className="size-6 animate-bounce"></ArrowDownIcon>
+                
               </Link>
             </div>
           </div>
 
-          <div className="relative flex items-center justify-center">
-            <img 
-              src="/img/sacola.png" 
-              alt="Sacolas personalizadas de diferentes tipos" 
-              className="w-full max-w-md rounded-2xl shadow-2xl object-cover"
-            />
+          {/* Container do Carrossel */}
+          <div className="relative flex items-center justify-center w-full max-w-md mx-auto aspect-square overflow-hidden rounded-2xl shadow-2xl">
+             {images.map((src, index) => (
+               <img
+                 key={src}
+                 src={src}
+                 alt={`Modelo de sacola ${index + 1}`}
+                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                   index === currentIndex ? "opacity-100" : "opacity-0"
+                 }`}
+               />
+             ))}
           </div>
         </div>
       </div>

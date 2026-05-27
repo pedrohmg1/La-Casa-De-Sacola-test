@@ -87,7 +87,7 @@ export default function HowItWorks() {
 
         <div className="mt-14 text-center">
           <Link
-            href="/cadastro"
+            href="/novo-pedido"
             className="inline-flex items-center gap-2 bg-[#264f41] hover:bg-[#1a3828] text-white font-bold text-base px-8 py-4 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             Começar meu pedido

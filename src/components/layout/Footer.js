@@ -60,7 +60,7 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Sacolas</h4>
             <ul className="space-y-2.5">
-              {["Sacola Kraft", "Sacola de Papel", "Sacola Plástica", "Sacola com Cordão"].map((item) => (
+              {["Sacola de Papel", "Sacola Plástica", "Sacola com Cordão"].map((item) => (
                 <li key={item}>
                   <Link href="#categorias" className="text-[#cbc0b7] hover:text-[#cd1515] text-sm transition-colors">
                     {item}
@@ -74,7 +74,7 @@ export default function Footer() {
             <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Empresa</h4>
             <ul className="space-y-2.5">
               {[
-                { label: "Sobre nós", href: "#" },
+                { label: "Sobre nós", href: "#sobre" },
                 { label: "Como funciona", href: "#como-funciona" },
                 { label: "Avaliações", href: "#avaliacoes" },
               ].map((item) => (
