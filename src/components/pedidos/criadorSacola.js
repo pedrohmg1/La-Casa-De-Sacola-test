@@ -51,6 +51,10 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   const inputArquivoRef = useRef(null);
   const MAX_LOGOS = 3;
 
+  const [conjuntosSalvos, setConjuntosSalvos] = useState([]);
+  const [carregandoConjuntos, setCarregandoConjuntos] = useState(false);
+  const [abaSelecionada, setAbaSelecionada] = useState("novo"); // "novo" | "salvo"
+
   const intervaloRefQuant = useRef(null);
   const timeoutRefQuant = useRef(null);
 
@@ -66,6 +70,21 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
         setQuantidade((q) => Math.max(sacolaSelecionada?.quantidademin_sac || 1, q + delta));
       }, 50);
     }, 300);
+  };
+
+  const fetchConjuntos = async () => {
+    if (!userId) return;
+    setCarregandoConjuntos(true);
+    try {
+      const { data, error } = await supabase.from("conjunto_logo").select("*").eq("usu_uuid", userId).order("data_criacao", { ascending: false });
+
+      if (error) throw error;
+      setConjuntosSalvos(data || []);
+    } catch (e) {
+      console.error("Erro ao buscar conjuntos:", e);
+    } finally {
+      setCarregandoConjuntos(false);
+    }
   };
 
   const qtdPararRepeticao = () => {
@@ -93,6 +112,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   // -------------------------------------------------------------------------
   useEffect(() => {
     if (aberto && sacolas.length === 0) fetchDadosIniciais();
+    if (aberto) fetchConjuntos();
   }, [aberto]);
 
   useEffect(() => {
@@ -167,6 +187,24 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   // -------------------------------------------------------------------------
   // Faz o upload ao avançar do passo 4 para o 5
   // -------------------------------------------------------------------------
+  const salvarConjunto = async (urls) => {
+    if (!userId || urls.length === 0) return;
+    try {
+      // Conta quantos conjuntos o usuário já tem para gerar o nome
+      const { count } = await supabase.from("conjunto_logo").select("*", { count: "exact", head: true }).eq("usu_uuid", userId);
+
+      const nome = `Conjunto Nº ${(count || 0) + 1}`;
+
+      await supabase.from("conjunto_logo").insert({
+        usu_uuid: userId,
+        nome,
+        logo_urls: urls,
+      });
+    } catch (e) {
+      console.error("Erro ao salvar conjunto:", e);
+    }
+  };
+
   const handleUploadEAvancar = async () => {
     const pendentes = logos.filter((l) => !l.url);
     if (pendentes.length === 0) {
@@ -184,6 +222,11 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
         })
       );
       setLogos(logosAtualizados);
+
+      // Salva automaticamente como conjunto
+      const urls = logosAtualizados.map((l) => l.url).filter(Boolean);
+      await salvarConjunto(urls);
+
       toast.success(`${logosAtualizados.length} logo(s) enviado(s) com sucesso!`);
       setPasso((p) => p + 1);
     } catch (error) {
@@ -233,34 +276,24 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
     setSalvando(true);
     try {
       let idPedido = pedidoId;
-  
+
       if (!idPedido) {
         // Verifica se já existe um pedido "No Carrinho" antes de criar um novo
-        const { data: pedidos } = await supabase
-          .from("pedido")
-          .select("id_ped")
-          .eq("usu_uuid", userId)
-          .eq("status_ped", "No Carrinho")
-          .order("data_criacao", { ascending: false })
-          .limit(1);
-  
+        const { data: pedidos } = await supabase.from("pedido").select("id_ped").eq("usu_uuid", userId).eq("status_ped", "No Carrinho").order("data_criacao", { ascending: false }).limit(1);
+
         const pedidoExistente = pedidos?.[0];
-  
+
         if (pedidoExistente) {
           idPedido = pedidoExistente.id_ped;
           setPedidoId(idPedido);
         } else {
-          const { data: novoPedido, error: errPedido } = await supabase
-            .from("pedido")
-            .insert({ status_ped: "No Carrinho", usu_uuid: userId })
-            .select()
-            .single();
+          const { data: novoPedido, error: errPedido } = await supabase.from("pedido").insert({ status_ped: "No Carrinho", usu_uuid: userId }).select().single();
           if (errPedido) throw errPedido;
           idPedido = novoPedido.id_ped;
           setPedidoId(idPedido);
         }
       }
-  
+
       const { error: errItem } = await supabase.from("itens_pedido").insert({
         ped_id: idPedido,
         sac_id: sacolaSelecionada.id_sac,
@@ -271,7 +304,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
         logo_urls: logos.map((l) => l.url).filter(Boolean),
       });
       if (errItem) throw errItem;
-  
+
       toast.success("Sacola adicionada ao pedido!");
       // Notifica o pai para atualizar o carrinho via DB
       onSacolaAdicionada();
@@ -547,76 +580,155 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
       {passo === 4 && (
         <div>
           <h3 className="text-xl font-bold text-[#264f41] mb-1">Envie seu(s) logo(s)</h3>
-          <p className="text-[#6b9e8a] text-sm mb-6">
+          <p className="text-[#6b9e8a] text-sm mb-4">
             Até {MAX_LOGOS} arquivos. PNG, JPG, SVG ou PDF · Máx. 10MB cada. <span className="text-[#3ca779] font-semibold">Opcional</span>
           </p>
 
-          {/* Lista de logos já adicionados */}
-          {logos.length > 0 && (
-            <div className="flex flex-col gap-3 mb-4">
-              {logos.map((logo, index) => (
-                <div key={logo.id} className="rounded-2xl border-2 border-[#3ca779] bg-[#f0faf5] p-4 flex items-center gap-4">
-                  {/* Miniatura */}
-                  <div className="w-14 h-14 rounded-xl border border-[#c8e3d5] bg-white flex items-center justify-center overflow-hidden shrink-0">
-                    {logo.preview ? (
-                      <img src={logo.preview} alt={`Logo ${index + 1}`} className="w-full h-full object-contain" />
-                    ) : (
-                      <span className="text-xs font-black text-[#8f0000] uppercase">PDF</span>
-                    )}
-                  </div>
+          {/* ✅ Disclaimer */}
+          <div className="mb-5 p-4 bg-[#fffbeb] border border-[#f6d860] rounded-xl">
+            <p className="text-xs font-bold text-[#92680a] mb-1">📁 Seus logos e imagens serão salvos</p>
+            <p className="text-xs text-[#92680a] leading-relaxed">
+              Os arquivos enviados serão salvos como um conjunto reutilizável em pedidos futuros. Você pode gerenciar seus conjuntos na página de "Meus Pedidos".
+            </p>
+          </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[#264f41] text-sm truncate">{logo.arquivo.name}</p>
-                    <p className="text-xs text-[#6b9e8a]">{(logo.arquivo.size / 1024 / 1024).toFixed(2)} MB</p>
-                    {logo.url && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <CheckIcon className="size-3 text-[#3ca779]" />
-                        <span className="text-xs text-[#3ca779] font-semibold">Enviado</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <span className="text-xs font-bold text-[#a0bcb2] shrink-0">Logo {index + 1}</span>
-
-                  <button onClick={() => removerLogo(logo.id)} className="p-2 rounded-xl text-[#6b9e8a] hover:bg-red-50 hover:text-red-500 transition-all shrink-0" title="Remover">
-                    <Cross2Icon className="size-4" />
-                  </button>
-                </div>
-              ))}
+          {/* ✅ Abas: Novo upload vs Conjuntos salvos */}
+          {conjuntosSalvos.length > 0 && (
+            <div className="flex gap-5 px-5 mb-5 items-center place-items-center">
+              <button
+                onClick={() => setAbaSelecionada("novo")}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border-2 w-full ${
+                  abaSelecionada === "novo" ? "border-[#3ca779] bg-[#f0faf5] text-[#264f41]" : "border-[#e4f4ed] text-[#6b9e8a] hover:border-[#c8e3d5]"
+                }`}
+              >
+                Enviar novos logos
+              </button>
+              <p className="text-md text-[#264f41] font-bold select-none">
+              ou
+            </p>
+              <button
+                onClick={() => setAbaSelecionada("salvo")}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border-2 w-full ${
+                  abaSelecionada === "salvo" ? "border-[#3ca779] bg-[#f0faf5] text-[#264f41]" : "border-[#e4f4ed] text-[#6b9e8a] hover:border-[#c8e3d5]"
+                }`}
+              >
+                Usar conjunto salvo
+              </button>
             </div>
           )}
 
-          {/* Zona de drop — só aparece se ainda cabe mais logo */}
-          {logos.length < MAX_LOGOS && (
-            <label
-              className={`flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all
-          ${arrastando ? "border-[#3ca779] bg-[#f0faf5] scale-[1.02]" : "border-[#c8e3d5] bg-[#f9fdfa] hover:border-[#3ca779] hover:bg-[#f0faf5]"}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <input ref={inputArquivoRef} type="file" accept=".png,.jpg,.jpeg,.svg,.pdf" className="hidden" onChange={handleInputArquivo} />
-              <div className="w-14 h-14 bg-white rounded-2xl border border-[#e4f4ed] flex items-center justify-center shadow-sm">
-                <UploadIcon className="size-6 text-[#3ca779]" />
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-[#264f41]">{logos.length === 0 ? "Arraste seu logo aqui" : "Adicionar outro logo"}</p>
-                <p className="text-sm text-[#6b9e8a] mt-1">
-                  {logos.length}/{MAX_LOGOS} adicionados
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-2 bg-[#3ca779] hover:bg-[#2e8f65] text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all">
-                <PlusIcon /> Escolher arquivo
-              </span>
-            </label>
+          {/* ✅ Aba: Conjuntos salvos */}
+          {abaSelecionada === "salvo" && (
+            <div className="flex flex-col gap-3 mb-4">
+              {carregandoConjuntos ? (
+                <div className="flex items-center gap-2 text-[#6b9e8a] text-sm py-4">
+                  <ReloadIcon className="animate-spin size-4" /> Carregando conjuntos...
+                </div>
+              ) : (
+                conjuntosSalvos.map((conjunto) => {
+                  const selecionado = logos.length > 0 && logos.every((l) => conjunto.logo_urls.includes(l.url));
+                  return (
+                    <button
+                      key={conjunto.id_conjunto}
+                      onClick={() => {
+                        // Carrega os logos do conjunto sem re-upload
+                        const logosDoConjunto = conjunto.logo_urls.map((url, i) => ({
+                          id: Date.now() + i,
+                          arquivo: null,
+                          preview: url,
+                          url,
+                        }));
+                        setLogos(logosDoConjunto);
+                      }}
+                      className={`text-left p-4 rounded-2xl border-2 transition-all ${selecionado ? "border-[#3ca779] bg-[#f0faf5]" : "border-[#e4f4ed] hover:border-[#a8d5be]"}`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-bold text-[#264f41] text-sm">{conjunto.nome}</p>
+                        <span className="text-xs text-[#6b9e8a]">{conjunto.logo_urls.length} logo(s)</span>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {conjunto.logo_urls.map((url, i) => (
+                          <img key={i} src={url} alt={`Logo ${i + 1}`} className="w-12 h-12 object-contain rounded-lg border border-[#e4f4ed] bg-white" />
+                        ))}
+                      </div>
+                      {selecionado && (
+                        <div className="mt-2 flex items-center gap-1 text-[#3ca779] text-xs font-bold">
+                          <CheckIcon className="size-3" /> Selecionado
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
           )}
 
-          <div className="mt-4 p-4 bg-[#f9fdfa] rounded-xl border border-[#e4f4ed]">
-            <p className="text-xs font-bold text-[#264f41] mb-1">💡 Dica</p>
-            <p className="text-xs text-[#6b9e8a] leading-relaxed">
-              Para melhor resultado, prefira <strong className="text-[#264f41]">SVG ou PDF vetorizado</strong> ou PNG com fundo transparente em alta resolução (mín. 300 DPI).
-            </p>
-          </div>
+          {/* Aba: Novo upload — código existente */}
+          {abaSelecionada === "novo" && (
+            <>
+              {logos.length > 0 && (
+                <div className="flex flex-col gap-3 mb-4">
+                  {logos.map((logo, index) => (
+                    <div key={logo.id} className="rounded-2xl border-2 border-[#3ca779] bg-[#f0faf5] p-4 flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-xl border border-[#c8e3d5] bg-white flex items-center justify-center overflow-hidden shrink-0">
+                        {logo.preview ? (
+                          <img src={logo.preview} alt={`Logo ${index + 1}`} className="w-full h-full object-contain" />
+                        ) : (
+                          <span className="text-xs font-black text-[#8f0000] uppercase">PDF</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-[#264f41] text-sm truncate">{logo.arquivo?.name || `Logo ${index + 1}`}</p>
+                        {logo.arquivo && <p className="text-xs text-[#6b9e8a]">{(logo.arquivo.size / 1024 / 1024).toFixed(2)} MB</p>}
+                        {logo.url && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <CheckIcon className="size-3 text-[#3ca779]" />
+                            <span className="text-xs text-[#3ca779] font-semibold">Enviado</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs font-bold text-[#a0bcb2] shrink-0">Logo {index + 1}</span>
+                      <button onClick={() => removerLogo(logo.id)} className="p-2 rounded-xl text-[#6b9e8a] hover:bg-red-50 hover:text-red-500 transition-all shrink-0">
+                        <Cross2Icon className="size-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {logos.length < MAX_LOGOS && (
+                <label
+                  className={`flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
+                    arrastando ? "border-[#3ca779] bg-[#f0faf5] scale-[1.02]" : "border-[#c8e3d5] bg-[#f9fdfa] hover:border-[#3ca779] hover:bg-[#f0faf5]"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input ref={inputArquivoRef} type="file" accept=".png,.jpg,.jpeg,.svg,.pdf" className="hidden" onChange={handleInputArquivo} />
+                  <div className="w-14 h-14 bg-white rounded-2xl border border-[#e4f4ed] flex items-center justify-center shadow-sm">
+                    <UploadIcon className="size-6 text-[#3ca779]" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-[#264f41]">{logos.length === 0 ? "Arraste seu logo aqui" : "Adicionar outro logo"}</p>
+                    <p className="text-sm text-[#6b9e8a] mt-1">
+                      {logos.length}/{MAX_LOGOS} adicionados
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-2 bg-[#3ca779] hover:bg-[#2e8f65] text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all">
+                    <PlusIcon /> Escolher arquivo
+                  </span>
+                </label>
+              )}
+
+              <div className="mt-4 p-4 bg-[#f9fdfa] rounded-xl border border-[#e4f4ed]">
+                <p className="text-xs font-bold text-[#264f41] mb-1">💡 Dica</p>
+                <p className="text-xs text-[#6b9e8a] leading-relaxed">
+                  Para melhor resultado, prefira <strong className="text-[#264f41]">SVG ou PDF vetorizado</strong> ou PNG com fundo transparente em alta resolução (mín. 300 DPI).
+                </p>
+              </div>
+            </>
+          )}
 
           <BotoesNavegacao />
         </div>
@@ -699,9 +811,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
               Criar outra sacola
             </button>
             <Link href="/carrinho">
-            <button className="px-6 py-3 rounded-2xl border-2 border-[#3ca779] text-[#3ca779] hover:bg-[#f0faf5] font-bold transition-all">
-              Ir para o carrinho
-            </button>
+              <button className="px-6 py-3 rounded-2xl border-2 border-[#3ca779] text-[#3ca779] hover:bg-[#f0faf5] font-bold transition-all">Ir para o carrinho</button>
             </Link>
           </div>
         </div>
