@@ -41,6 +41,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
 
   // Seleções do wizard
   const [sacolaSelecionada, setSacolaSelecionada] = useState(null);
+  const [tamanhoSelecionado, setTamanhoSelecionado] = useState(null);
   const [corSelecionada, setCorSelecionada] = useState(null);
   const [numCoresLogo, setNumCoresLogo] = useState(1);
   const [quantidade, setQuantidade] = useState(1);
@@ -59,15 +60,15 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   const timeoutRefQuant = useRef(null);
 
   const qtdStep = () => {
-    const min = sacolaSelecionada?.quantidademin_sac || 1;
+    const min = tamanhoSelecionado?.qtd_minima || 1;
     return min >= 1000 ? 100 : min >= 100 ? 10 : 1;
   };
 
   const qtdIniciarRepeticao = (delta) => {
-    setQuantidade((q) => Math.max(sacolaSelecionada?.quantidademin_sac || 1, q + delta));
+    setQuantidade((q) => Math.max(tamanhoSelecionado?.qtd_minima || 1, q + delta));
     timeoutRefQuant.current = setTimeout(() => {
       intervaloRefQuant.current = setInterval(() => {
-        setQuantidade((q) => Math.max(sacolaSelecionada?.quantidademin_sac || 1, q + delta));
+        setQuantidade((q) => Math.max(tamanhoSelecionado?.qtd_minima || 1, q + delta));
       }, 50);
     }, 300);
   };
@@ -94,7 +95,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
 
   const qtdHandleInput = (e) => {
     const raw = e.target.value.replace(/[^0-9]/g, "");
-    const min = sacolaSelecionada?.quantidademin_sac || 1;
+    const min = tamanhoSelecionado?.qtd_minima || 1;
     if (raw === "") {
       setQuantidade(min);
       return;
@@ -103,7 +104,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   };
 
   const qtdHandleBlur = () => {
-    const min = sacolaSelecionada?.quantidademin_sac || 1;
+    const min = tamanhoSelecionado?.qtd_minima || 1;
     if (quantidade < min) setQuantidade(min);
   };
 
@@ -117,14 +118,27 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
 
   useEffect(() => {
     if (sacolaSelecionada) {
-      setQuantidade(sacolaSelecionada.quantidademin_sac || 1);
+      const tamanhosAtivos = sacolaSelecionada.sacola_tamanho?.filter(st => st.ativo) || [];
+      if (tamanhosAtivos.length > 0) {
+        setTamanhoSelecionado(tamanhosAtivos[0]);
+        setQuantidade(tamanhosAtivos[0].qtd_minima || 1);
+      } else {
+        setTamanhoSelecionado(null);
+        setQuantidade(1);
+      }
     }
   }, [sacolaSelecionada]);
+
+  useEffect(() => {
+    if (tamanhoSelecionado) {
+      setQuantidade(q => Math.max(q, tamanhoSelecionado.qtd_minima || 1));
+    }
+  }, [tamanhoSelecionado]);
 
   const fetchDadosIniciais = async () => {
     setCarregando(true);
     try {
-      const { data: dataSac, error: errSac } = await supabase.from("sacola").select("*").order("nome_sac", { ascending: true });
+      const { data: dataSac, error: errSac } = await supabase.from("sacola").select("*, sacola_tamanho(*, tamanho(tamanho_tam))").order("nome_sac", { ascending: true });
       if (errSac) throw errSac;
       setSacolas(dataSac || []);
 
@@ -242,7 +256,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   const podeAvancar = () => {
     if (passo === 1) return !!sacolaSelecionada;
     if (passo === 2) return !!corSelecionada;
-    if (passo === 3) return quantidade >= (sacolaSelecionada?.quantidademin_sac || 1);
+    if (passo === 3) return !!tamanhoSelecionado && quantidade >= (tamanhoSelecionado.qtd_minima || 1);
     if (passo === 4) return true; // Logo é opcional
     return false;
   };
@@ -297,6 +311,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
       const { error: errItem } = await supabase.from("itens_pedido").insert({
         ped_id: idPedido,
         sac_id: sacolaSelecionada.id_sac,
+        tamanho_id: tamanhoSelecionado.tam_id,
         quantidade: quantidade,
         preco: sacolaSelecionada.precounitario_sac * numCoresLogo,
         cor_id: corSelecionada.id_cor,
@@ -453,16 +468,29 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
                       ${selecionada ? "border-[#3ca779] bg-[#f0faf5] shadow-md" : "border-[#e4f4ed] hover:border-[#a8d5be] hover:bg-[#f9fdfa]"}`}
                   >
                     <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold text-[#264f41]">{sac.nome_sac}</p>
-                        <p className="text-sm text-[#6b9e8a] mt-0.5">{sac.tipo_sac}</p>
-                        {sac.tamanho_sac && <p className="text-xs text-[#a0bcb2] mt-1">{sac.tamanho_sac}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="font-extrabold text-[#3ca779]">R$ {Number(sac.precounitario_sac).toFixed(2).replace(".", ",")}</p>
-                        <p className="text-xs text-[#a0bcb2]">por unidade</p>
-                        {sac.quantidademin_sac && <p className="text-xs text-[#b0cfc4] mt-1">Mín. {sac.quantidademin_sac} un.</p>}
-                      </div>
+<div>
+<p className="font-bold text-[#264f41]">{sac.nome_sac}</p>
+<p className="text-sm text-[#6b9e8a] mt-0.5">{sac.tipo_sac}</p>
+{sac.sacola_tamanho?.filter(st => st.ativo).length > 0 && (
+  <p className="text-xs text-[#a0bcb2] mt-1">
+    {sac.sacola_tamanho.filter(st => st.ativo).length} tamanho(s) disponível(is)
+  </p>
+)}
+</div>
+<div className="text-right flex flex-col items-end">
+{(() => {
+  const ativos = sac.sacola_tamanho?.filter(st => st.ativo) || [];
+  const precos = ativos.map(st => Number(st.preco));
+  const minimo = precos.length > 0 ? Math.min(...precos) : 0;
+  return (
+    <>
+      <p className="text-[10px] uppercase text-[#6b9e8a] font-bold">A partir de</p>
+      <p className="font-extrabold text-[#3ca779]">R$ {minimo.toFixed(2).replace(".", ",")}</p>
+      <p className="text-xs text-[#a0bcb2]">por unidade</p>
+    </>
+  );
+})()}
+</div>
                     </div>
                     {selecionada && (
                       <div className="mt-3 flex items-center gap-1.5 text-[#3ca779] text-sm font-semibold">
@@ -511,9 +539,29 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
           <h3 className="text-xl font-bold text-[#264f41] mb-1">Detalhes do pedido</h3>
           <p className="text-[#6b9e8a] text-sm mb-6">Informe a quantidade e as cores do seu logo.</p>
 
-          <div className="space-y-6">
-            <div className="bg-[#f9fdfa] rounded-2xl p-5 border border-[#e4f4ed]">
-              <p className="font-bold text-[#264f41] mb-1">Quantidade</p>
+<div className="space-y-6">
+<div className="bg-[#f9fdfa] rounded-2xl p-5 border border-[#e4f4ed]">
+  <p className="font-bold text-[#264f41] mb-1">Tamanho da sacola</p>
+  <div className="flex flex-wrap gap-3 mt-3 mb-2">
+    {sacolaSelecionada?.sacola_tamanho?.filter(st => st.ativo).map((st) => (
+      <button
+        key={st.tam_id}
+        onClick={() => setTamanhoSelecionado(st)}
+        className={`px-4 py-2 rounded-xl font-bold border-2 transition-all ${
+          tamanhoSelecionado?.tam_id === st.tam_id
+            ? "border-[#3ca779] bg-[#e4f4ed] text-[#264f41]"
+            : "border-[#e4f4ed] text-[#6b9e8a] hover:border-[#c8e3d5]"
+        }`}
+      >
+        {st.tamanho?.tamanho_tam}
+      </button>
+    ))}
+  </div>
+</div>
+
+<div className="bg-[#f9fdfa] rounded-2xl p-5 border border-[#e4f4ed]">
+  <p className="font-bold text-[#264f41] mb-1">Quantidade</p>
+  {tamanhoSelecionado?.qtd_minima && <p className="text-xs text-[#6b9e8a] mb-4">Mínimo de {tamanhoSelecionado.qtd_minima} unidades para o tamanho {tamanhoSelecionado.tamanho?.tamanho_tam}.</p>}
               {sacolaSelecionada?.quantidademin_sac && <p className="text-xs text-[#6b9e8a] mb-4">Mínimo de {sacolaSelecionada.quantidademin_sac} unidades para este modelo.</p>}
               <div className="flex items-center gap-4">
                 <button
@@ -743,7 +791,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
           <div className="space-y-3">
             <RevisaoLinha label="Sacola" valor={sacolaSelecionada?.nome_sac} />
             <RevisaoLinha label="Tipo" valor={sacolaSelecionada?.tipo_sac} />
-            {sacolaSelecionada?.tamanho_sac && <RevisaoLinha label="Tamanho" valor={sacolaSelecionada.tamanho_sac} />}
+            {tamanhoSelecionado && <RevisaoLinha label="Tamanho" valor={tamanhoSelecionado.tamanho?.tamanho_tam} />}
             <RevisaoLinha
               label="Cor"
               valor={
@@ -779,7 +827,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
 
             <div className="mt-4 pt-4 border-t border-[#e4f4ed] flex justify-between items-center">
               <span className="font-bold text-[#264f41]">Subtotal estimado</span>
-              <span className="text-xl font-extrabold text-[#3ca779]">R$ {(sacolaSelecionada?.precounitario_sac * quantidade * numCoresLogo).toFixed(2).replace(".", ",")}</span>
+              <span className="text-xl font-extrabold text-[#3ca779]">R$ {(tamanhoSelecionado?.preco * quantidade * numCoresLogo).toFixed(2).replace(".", ",")}</span>
             </div>
           </div>
 
@@ -805,6 +853,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
                 setNumCoresLogo(1);
                 setQuantidade(1);
                 removerLogo();
+                setTamanhoSelecionado(null)
               }}
               className="px-6 py-3 rounded-2xl border-2 border-[#3ca779] text-[#3ca779] hover:bg-[#f0faf5] font-bold transition-all"
             >

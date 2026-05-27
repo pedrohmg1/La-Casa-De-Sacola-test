@@ -42,22 +42,39 @@ export function CartProvider({ children }) {
       // Busca os itens com dados da sacola e da cor
       const { data: itens } = await supabase
         .from("itens_pedido")
-        .select("*, sacola(*), cores(nome_cor)")
+        // 👇 Alteração aqui: tiramos o tamanho solto e colocamos dentro do sacola_tamanho
+        .select("*, sacola(*, sacola_tamanho(*, tamanho(tamanho_tam))), cores(nome_cor)")
         .eq("ped_id", pedido.id_ped);
 
-      const mappedItems = (itens || []).map(item => ({
-        id_ten: item.id_ten,
-        id_sac: item.sac_id,
-        nome_sac: item.sacola?.nome_sac,
-        tipo_sac: item.sacola?.tipo_sac,
-        tamanho_sac: item.sacola?.tamanho_sac,
-        quantidademin_sac: item.sacola?.quantidademin_sac,
-        precounitario_sac: item.preco,
-        quantity: item.quantidade,
-        cor_sac: item.cores?.nome_cor,
-        cor_id: item.cor_id,
-        logo_url: item.logo_url,
-      }));
+        const mappedItems = (itens || []).map(item => {
+          // Encontra o vínculo de tamanho específico para obter a quantidade mínima atualizada
+          const vinculoTamanho = item.sacola?.sacola_tamanho?.find(st => st.tam_id === item.tamanho_id);
+  
+          return {
+            id_ten: item.id_ten,
+            id_sac: item.sac_id,
+            tamanho_id: item.tamanho_id,
+            nome_sac: item.sacola?.nome_sac,
+            tipo_sac: item.sacola?.tipo_sac,
+            tamanho_sac: vinculoTamanho?.tamanho?.tamanho_tam || "Não definido",
+            quantidademin_sac: vinculoTamanho ? vinculoTamanho.qtd_minima : 1,
+            precounitario_sac: item.preco,
+            preco: item.preco, // Garante compatibilidade caso chamem item.preco
+            quantity: item.quantidade,
+            cor_sac: item.cores?.nome_cor,
+            cor_id: item.cor_id,
+            logo_url: item.logo_url,
+            
+            // 💡 Retrocompatibilidade crucial: se a página do carrinho acessar propriedades de dentro de item.sacola,
+            // nós injetamos os novos valores dinâmicos aqui para que o layout antigo continue funcionando perfeitamente!
+            sacola: item.sacola ? {
+              ...item.sacola,
+              precounitario_sac: item.preco,
+              quantidademin_sac: vinculoTamanho ? vinculoTamanho.qtd_minima : 1,
+              tamanho_sac: vinculoTamanho?.tamanho?.tamanho_tam || "Não definido"
+            } : null
+          };
+        });
 
       setCartItems(mappedItems);
     } catch (error) {
@@ -148,7 +165,7 @@ export function CartProvider({ children }) {
   };
 
   // Função para adicionar item direto do catálogo
-  const addToCart = async (produto) => {
+  const addToCart = async (produto, tamanhoVinculo) => {
     if (!userId) {
       console.error("Usuário não logado.");
       return;
@@ -176,14 +193,23 @@ export function CartProvider({ children }) {
       setPedidoId(currentPedidoId);
     }
 
+    // Se vier um tamanho selecionado do catálogo, usa os dados dele. Caso contrário, pega o primeiro ativo.
+    const vinculo = tamanhoVinculo || produto.sacola_tamanho?.filter(st => st.ativo)[0];
+
+    if (!vinculo) {
+      console.error("Nenhum tamanho disponível para este produto.");
+      return;
+    }
+
     // Insere o produto na tabela itens_pedido
     const { error: erroItem } = await supabase
       .from("itens_pedido")
       .insert([{
         ped_id: currentPedidoId,
         sac_id: produto.id_sac,
-        quantidade: produto.quantidademin_sac || 1,
-        preco: produto.precounitario_sac,
+        tamanho_id: vinculo.tam_id,
+        quantidade: vinculo.qtd_minima || 1,
+        preco: vinculo.preco,
       }]);
 
     if (!erroItem) {

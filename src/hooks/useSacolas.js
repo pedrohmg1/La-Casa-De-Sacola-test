@@ -9,11 +9,9 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
   const [novaSacola, setNovaSacola] = useState({
     nome_sac: "",
     tipo_sac: "",
-    quantidademin_sac: "",
-    precounitario_sac: "",
-    tamanho_sac: "",
     peso_sac: "",
     status_sac: "",
+    sacola_tamanho: [],
   });
 
   const [modalAberto, setModalAberto] = useState(false);
@@ -35,7 +33,10 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
   const carregarSacolas = async () => {
     // Pedimos tudo (*) de uma tabela específica
     setCarregandoSacolas(true);
-    const { data, error } = await supabase.from("sacola").select("*");
+    const { data, error } = await supabase
+      .from("sacola")
+      .select("*, sacola_tamanho(*, tamanho(tamanho_tam))")
+      .order("nome_sac");
 
     if (error) {
       console.error("Erro ao buscar as sacolas:", error);
@@ -61,91 +62,105 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
     setNovaSacola({
       nome_sac: "",
       tipo_sac: "",
-      quantidademin_sac: "",
-      precounitario_sac: "",
-      tamanho_sac: "",
       peso_sac: "",
       status_sac: "",
+      sacola_tamanho: [],
     });
 
     setModalAberto(true);
   };
 
   const handleSalvarSacola = async (e) => {
-    e.preventDefault(); // Evita que a página recarregue ao enviar o formulário
+    e.preventDefault();
 
-    // 1. Preparamos a sacola final com um ID único provisório
+    // Validação básica
+    if (!novaSacola.sacola_tamanho || novaSacola.sacola_tamanho.length === 0) {
+      toast.error("Adicione ao menos um tamanho para a sacola.");
+      return;
+    }
+
     const sacolaPronta = {
       tipo_sac: novaSacola.tipo_sac,
-      quantidademin_sac: parseInt(novaSacola.quantidademin_sac),
-      precounitario_sac: parseFloat(novaSacola.precounitario_sac),
-      tamanho_sac: novaSacola.tamanho_sac,
-      peso_sac: novaSacola.peso_sac,
+      /* peso_sac: novaSacola.peso_sac, */
       nome_sac: novaSacola.nome_sac,
       status_sac: novaSacola.status_sac,
     };
 
-    // 2. A Mágica do React: atualizamos a lista principal
-    // Os "..." copiam as sacolas antigas, e colocamos a "sacolaPronta" no final
     if (sacolaEditandoId) {
       // ---------------- MODO EDIÇÃO ----------------
-      const { error } = await supabase
+      const { error: errorSacola } = await supabase
         .from("sacola")
-        .update({
-          tipo_sac: novaSacola.tipo_sac,
-          quantidademin_sac: parseInt(novaSacola.quantidademin_sac),
-          precounitario_sac: parseFloat(novaSacola.precounitario_sac),
-          tamanho_sac: novaSacola.tamanho_sac,
-          peso_sac: novaSacola.peso_sac,
-          nome_sac: novaSacola.nome_sac,
-          status_sac: novaSacola.status_sac,
-        })
+        .update(sacolaPronta)
         .eq("id_sac", sacolaEditandoId);
 
-      if (error) {
-        console.error("Erro ao editar:", error);
+      if (errorSacola) {
+        console.error("Erro ao editar sacola:", errorSacola);
         toast.error("Não foi possível atualizar a sacola.");
-      } else {
-        await carregarSacolas();
-        setNovaSacola({
-          nome_sac: "",
-          tipo_sac: "",
-          quantidademin_sac: "",
-          precounitario_sac: "",
-          tamanho_sac: "",
-          peso_sac: "",
-          status_sac: "",
-        });
-        setModalAberto(false);
-        setSacolaEditandoId(null);
-        toast.success("Sacola atualizada.");
+        return;
       }
+
+      // Deleta vínculos antigos e insere os novos (Garante a integridade do array)
+      await supabase.from("sacola_tamanho").delete().eq("sac_id", sacolaEditandoId);
+      
+      const tamanhosParaInserir = novaSacola.sacola_tamanho.map((st) => ({
+        sac_id: sacolaEditandoId,
+        tam_id: parseInt(st.tam_id),
+        preco: parseFloat(st.preco),
+        peso: parseFloat(st.peso),
+        qtd_minima: parseInt(st.qtd_minima),
+        ativo: st.ativo !== false,
+      }));
+
+      const { error: errorTamanhos } = await supabase.from("sacola_tamanho").insert(tamanhosParaInserir);
+
+      if (errorTamanhos) {
+         console.error("Erro ao atualizar tamanhos:", errorTamanhos);
+         toast.error("Sacola atualizada, mas houve erro nos tamanhos.");
+      } else {
+         toast.success("Sacola atualizada.");
+      }
+
     } else {
       // ---------------- MODO CRIAÇÃO ----------------
-      const { data, error } = await supabase.from("sacola").insert([sacolaPronta]).select();
+      const { data, error: errorSacola } = await supabase.from("sacola").insert([sacolaPronta]).select();
 
-      if (error) {
-        console.error("Erro ao criar:", error);
-      } else if (data && data[0]) {
-        // 👈 Protegemos aqui também para evitar inserir undefined
-        setSacolas([...sacolas, data[0]]);
-        toast.success("Sacola cadastrada.");
+      if (errorSacola || !data || !data[0]) {
+        console.error("Erro ao criar sacola:", errorSacola);
+        toast.error("Erro ao cadastrar sacola.");
+        return;
       }
 
-      setNovaSacola({
-        nome_sac: "",
-        tipo_sac: "",
-        quantidademin_sac: "",
-        precounitario_sac: "",
-        tamanho_sac: "",
-        peso_sac: "",
-        status_sac: "",
-      });
+      const novaSacolaId = data[0].id_sac;
 
-      // Passo 4: Fecha a janela do Radix
-      setModalAberto(false);
-      setSacolaEditandoId(null);
+      const tamanhosParaInserir = novaSacola.sacola_tamanho.map((st) => ({
+        sac_id: novaSacolaId,
+        tam_id: parseInt(st.tam_id),
+        preco: parseFloat(st.preco),
+        peso: parseFloat(st.peso),
+        qtd_minima: parseInt(st.qtd_minima),
+        ativo: st.ativo !== false,
+      }));
+
+      const { error: errorTamanhos } = await supabase.from("sacola_tamanho").insert(tamanhosParaInserir);
+
+      if (errorTamanhos) {
+         console.error("Erro ao inserir tamanhos:", errorTamanhos);
+         toast.error("Sacola criada, mas houve erro ao salvar os tamanhos.");
+      } else {
+         toast.success("Sacola cadastrada.");
+      }
     }
+
+    await carregarSacolas();
+    setNovaSacola({
+      nome_sac: "",
+      tipo_sac: "",
+      /* peso_sac: "", */
+      status_sac: "",
+      sacola_tamanho: [],
+    });
+    setModalAberto(false);
+    setSacolaEditandoId(null);
   };
 
   const handleOcultarSacola = async () => {

@@ -115,7 +115,7 @@ export default function ModalSacola({
             </div>
 
             {/* Qtd. Mínima + Preço */}
-            <div className="grid grid-cols-2 gap-4">
+{/*             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <label className="font-bold text-xs lg:text-sm select-none text-gray-700">
                   Qtd. Mínima
@@ -150,10 +150,10 @@ export default function ModalSacola({
                   }}
                 />
               </div>
-            </div>
+            </div> */}
 
 {/* Peso */}
-<div className="flex flex-col gap-1">
+{/* <div className="flex flex-col gap-1">
   <label className="font-bold text-xs lg:text-sm select-none text-gray-700">
     Peso (Aplicado a todos os tamanhos)
   </label>
@@ -165,7 +165,7 @@ export default function ModalSacola({
     onChange={(e) => onSacolaChange({ ...sacola, peso_sac: e.target.value })}
     required
   />
-</div>
+</div> */}
 
 {/* Vínculo de Tamanhos */}
 <div className="flex flex-col gap-3 mt-2 border-t border-gray-100 pt-5">
@@ -177,7 +177,7 @@ export default function ModalSacola({
       type="button"
       onClick={() => onSacolaChange({
         ...sacola,
-        sacola_tamanho: [...(sacola.sacola_tamanho || []), { tam_id: "", preco: "", qtd_minima: "", ativo: true }]
+        sacola_tamanho: [...(sacola.sacola_tamanho || []), { tam_id: "", preco: "", qtd_minima: "", peso: "", ativo: true }]
       })}
       className="flex items-center gap-1 text-xs bg-[#f0faf5] text-[#3ca779] px-3 py-2 rounded-lg font-bold hover:bg-[#c8e3d5] transition border border-[#c8e3d5]"
     >
@@ -186,7 +186,7 @@ export default function ModalSacola({
   </div>
 
   {(sacola.sacola_tamanho || []).map((tamanhoVinculo, index) => (
-    <div key={index} className="grid grid-cols-[1.5fr_1fr_1fr_auto_auto] gap-3 items-end bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm relative">
+    <div key={index} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_auto_auto] gap-3 items-end bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm relative">
       
       {/* Select Tamanho */}
       <div className="flex flex-col gap-1">
@@ -226,42 +226,78 @@ export default function ModalSacola({
         </Select.Root>
       </div>
 
-      {/* Input Qtd Mínima */}
-      <div className="flex flex-col gap-1">
-        <label className="font-bold text-xs text-gray-600">Qtd. Mín</label>
-        <input
-          type="number"
-          min="1"
-          placeholder="Ex: 100"
-          className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
-          value={tamanhoVinculo.qtd_minima}
-          onChange={(e) => {
-            const novosTamanhos = [...sacola.sacola_tamanho];
-            novosTamanhos[index].qtd_minima = e.target.value;
-            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-          }}
-          required
-        />
-      </div>
+{/* Input Qtd Mínima */}
+<div className="flex flex-col gap-1">
+  <label className="font-bold text-xs text-gray-600">Qtd. Mín</label>
+  <input
+    type="number"
+    min="1"
+    placeholder="Ex: 100"
+    className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+    value={tamanhoVinculo.qtd_minima ?? ""}
+    onChange={(e) => {
+      const novosTamanhos = [...sacola.sacola_tamanho];
+      novosTamanhos[index].qtd_minima = e.target.value;
+      onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+    }}
+    onKeyDown={(e) => {
+      if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+    }}
+    required
+  />
+</div>
 
-      {/* Input Preço */}
-      <div className="flex flex-col gap-1">
-        <label className="font-bold text-xs text-gray-600">Preço (R$)</label>
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="Ex: 1.50"
-          className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
-          value={tamanhoVinculo.preco}
-          onChange={(e) => {
-            const novosTamanhos = [...sacola.sacola_tamanho];
-            novosTamanhos[index].preco = e.target.value;
-            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-          }}
-          required
-        />
-      </div>
+{/* Input Preço */}
+<div className="flex flex-col gap-1">
+  <label className="font-bold text-xs text-gray-600">Preço (R$)</label>
+  <input
+    type="number"
+    min="0"
+    step="0.01"
+    placeholder="Ex: 1.50"
+    className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+    value={tamanhoVinculo.preco ?? ""}
+    onChange={(e) => {
+      const novosTamanhos = [...sacola.sacola_tamanho];
+      novosTamanhos[index].preco = e.target.value;
+      onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+    }}
+    onKeyDown={(e) => {
+      if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+    }}
+    onBlur={(e) => {
+      const valor = parseFloat(e.target.value);
+      if (!isNaN(valor)) {
+        const novosTamanhos = [...sacola.sacola_tamanho];
+        novosTamanhos[index].preco = valor.toFixed(2);
+        onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+      }
+    }}
+    required
+  />
+</div>
+
+{/* Input Peso */}
+<div className="flex flex-col gap-1">
+  <label className="font-bold text-xs text-gray-600">Peso (g)</label>
+  <input
+    type="number"
+    min="0"
+    step="1"
+    placeholder="Ex: 50"
+    className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+    value={tamanhoVinculo.peso ?? ""}
+    onChange={(e) => {
+      const novosTamanhos = [...sacola.sacola_tamanho];
+      novosTamanhos[index].peso = e.target.value;
+      onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+    }}
+    onKeyDown={(e) => {
+      if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+    }}
+    required
+  />
+</div>
 
       {/* Toggle Ativo */}
       <div className="flex flex-col gap-1">
