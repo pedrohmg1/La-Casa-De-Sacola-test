@@ -108,6 +108,7 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
         preco: parseFloat(st.preco),
         peso: parseFloat(st.peso),
         qtd_minima: parseInt(st.qtd_minima),
+        qtd_estoque: parseInt(st.qtd_estoque) || 0,
         ativo: st.ativo !== false,
       }));
 
@@ -138,6 +139,7 @@ export function useSacolas({ obterCoresSelecionadasDoMaterial }) {
         preco: parseFloat(st.preco),
         peso: parseFloat(st.peso),
         qtd_minima: parseInt(st.qtd_minima),
+        qtd_estoque: parseInt(st.qtd_estoque) || 0,
         ativo: st.ativo !== false,
       }));
 

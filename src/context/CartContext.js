@@ -26,8 +26,8 @@ export function CartProvider({ children }) {
         .select("id_ped")
         .eq("usu_uuid", uid)
         .eq("status_ped", "No Carrinho")
-        .order("data_criacao", { ascending: false })
-        .limit(1);
+        .order("data_criacao", { ascending: false });
+        /* .limit(1); */
 
       const pedido = pedidos?.[0];
 
@@ -62,6 +62,7 @@ export function CartProvider({ children }) {
             precounitario_sac: item.preco,
             preco: item.preco, // Garante compatibilidade caso chamem item.preco
             quantity: item.quantidade,
+            qtd_estoque: vinculoTamanho?.qtd_estoque || 0,
             cor_sac: item.cores?.nome_cor,
             cor_id: item.cor_id,
             logo_url: item.logo_url,
@@ -135,31 +136,40 @@ export function CartProvider({ children }) {
 
   // Remove pelo id_ten (chave única do item no banco)
   const removeFromCart = async (itemId) => {
+    // 1. Elimina o item específico da base de dados
     const { error } = await supabase
       .from("itens_pedido")
       .delete()
       .eq("id_ten", itemId);
 
     if (!error) {
-      const novaLista = cartItems.filter(item => item.id_ten !== itemId);
-      setCartItems(novaLista);
+      // 2. Atualiza a tela imediatamente (remove visualmente para o utilizador)
+      setCartItems(prev => prev.filter(item => item.id_ten !== itemId));
 
-      // NOVO: Se a lista ficar vazia após a remoção, cancelamos o pedido órfão
-      if (novaLista.length === 0 && pedidoId && userId) {
-        const { error: cancelError } = await supabase
-          .from("pedido")
-          .update({ status_ped: "Cancelado" })
-          .eq("id_ped", pedidoId)
-          .eq("usu_uuid", userId); // Trava de segurança garantindo que é o dono do pedido
+      // 3. Verificação de segurança: Pergunta à base de dados se sobrou algum item neste pedido
+      if (pedidoId && userId) {
+        const { count, error: countError } = await supabase
+          .from("itens_pedido")
+          .select('*', { count: 'exact', head: true })
+          .eq("ped_id", pedidoId);
 
-        if (!cancelError) {
-          // Limpamos o pedidoId do contexto para que o sistema crie um 
-          // carrinho totalmente novo na próxima vez que ele adicionar uma sacola
-          setPedidoId(null);
-        } else {
-          console.error("Erro ao cancelar o carrinho vazio:", cancelError);
+        // 4. Se não houver erros e a contagem de itens for zero, cancela o pedido pai
+        if (!countError && count === 0) {
+          const { error: cancelError } = await supabase
+            .from("pedido")
+            .update({ status_ped: "Cancelado" })
+            .eq("id_ped", pedidoId)
+            .eq("usu_uuid", userId); // Trava de segurança
+
+          if (!cancelError) {
+            setPedidoId(null); // Reseta o carrinho atual para que o sistema crie um novo na próxima vez
+          } else {
+            console.error("Erro ao cancelar o pedido órfão:", cancelError);
+          }
         }
       }
+    } else {
+      console.error("Erro ao remover item:", error);
     }
   };
 

@@ -14,32 +14,137 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import ModalAlterarStatus from "@/components/producao/ModalAlterarStatus";
 import useTour from "@/hooks/useTour.js";
+import { toast } from "react-hot-toast";
+import { UploadIcon, Cross2Icon, ReloadIcon } from "@radix-ui/react-icons";
 
-function LogosItem({ item, setImagemAberta }) {
-  const urls =
-    item.logo_urls?.length > 0
-      ? item.logo_urls
-      : item.logo_url
-        ? [item.logo_url]
-        : [];
+// Função para enviar imagens para o Cloudinary
+async function uploadParaCloudinary(arquivo) {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = "publico";
 
-  if (urls.length === 0)
-    return (
-      <div className="mt-3">
-        <span className="text-xs text-[#a0bcb2] italic">
-          Nenhum logo enviado
-        </span>
-      </div>
-    );
+  const formData = new FormData();
+  formData.append("file", arquivo);
+  formData.append("upload_preset", uploadPreset);
+
+  const resUpload = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { 
+    method: "POST", 
+    body: formData 
+  });
+
+  if (!resUpload.ok) {
+    throw new Error("Falha ao enviar o arquivo.");
+  }
+
+  const dados = await resUpload.json();
+  return dados.secure_url;
+}
+
+function LogosItem({ item, setImagemAberta, setPedidos, setPedidoSelecionado }) {
+  const [uploadando, setUploadando] = useState(false);
+  const [logoParaRemover, setLogoParaRemover] = useState(null); // Controla qual logo será removido e abre o modal
+
+  const urls = item.logo_urls?.length > 0 
+    ? item.logo_urls 
+    : item.logo_url ? [item.logo_url] : [];
+
+  // Função para sincronizar a tela (Lista geral e Modal aberto)
+  const atualizarEstadoLocal = (novasUrls) => {
+    // 1. Atualiza a lista principal de pedidos
+    setPedidos((prev) => prev.map((p) => {
+      if (p.id_ped === item.ped_id) {
+        return {
+          ...p,
+          itens_pedido: p.itens_pedido.map((i) => 
+            i.id_ten === item.id_ten ? { ...i, logo_urls: novasUrls, logo_url: novasUrls[0] || null } : i
+          )
+        };
+      }
+      return p;
+    }));
+
+    // 2. Atualiza o Modal que está aberto neste momento
+    setPedidoSelecionado((prev) => {
+      if (!prev || prev.id_ped !== item.ped_id) return prev;
+      return {
+        ...prev,
+        itens_pedido: prev.itens_pedido.map((i) =>
+          i.id_ten === item.id_ten ? { ...i, logo_urls: novasUrls, logo_url: novasUrls[0] || null } : i
+        )
+      };
+    });
+  };
+
+  const handleAdicionarLogo = async (e) => {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo) return;
+    
+    setUploadando(true);
+    try {
+      const urlStr = await uploadParaCloudinary(arquivo);
+      const novasUrls = [...urls, urlStr];
+      
+      const { error } = await supabase
+        .from("itens_pedido")
+        .update({ logo_urls: novasUrls, logo_url: novasUrls[0] })
+        .eq("id_ten", item.id_ten);
+        
+      if (error) throw error;
+      toast.success("Logo adicionado com sucesso!");
+      
+      atualizarEstadoLocal(novasUrls);
+    } catch (error) {
+      console.error(error);
+      toast.error("Falha ao enviar o logo.");
+    } finally {
+      setUploadando(false);
+      e.target.value = null; 
+    }
+  };
+
+  const handleConfirmarRemocao = async () => {
+    if (!logoParaRemover) return;
+    
+    const novasUrls = urls.filter((u) => u !== logoParaRemover);
+    
+    try {
+      const { error } = await supabase
+        .from("itens_pedido")
+        .update({ logo_urls: novasUrls, logo_url: novasUrls[0] || null })
+        .eq("id_ten", item.id_ten);
+        
+      if (error) throw error;
+      toast.success("Logo removido.");
+      
+      atualizarEstadoLocal(novasUrls);
+    } catch (error) {
+      console.error(error);
+      toast.error("Falha ao remover o logo.");
+    } finally {
+      setLogoParaRemover(null); // Fecha o modal
+    }
+  };
 
   return (
     <div className="mt-3">
       <p className="text-xs font-bold text-[#6b9e8a] uppercase mb-2">
-        Logo(s) enviado(s) pelo cliente:
+        Logo(s) do item:
       </p>
+
       <div className="flex flex-wrap gap-2">
         {urls.map((url, i) => (
-          <div key={i} className="flex flex-col items-center gap-1">
+          <div key={i} className="relative flex flex-col items-center gap-1 group">
+            {/* Botão de Remover (Aparece ao passar o mouse) */}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setLogoParaRemover(url); // Abre o modal de confirmação
+              }}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600 z-10"
+              title="Remover logo"
+            >
+              <Cross2Icon className="size-3" />
+            </button>
+            
             <img
               src={url}
               alt={`Logo ${i + 1}`}
@@ -49,7 +154,58 @@ function LogosItem({ item, setImagemAberta }) {
             <span className="text-xs text-[#a0bcb2]">Logo {i + 1}</span>
           </div>
         ))}
+
+        {/* Botão de Upload em formato de Card */}
+        <div className="flex flex-col items-center gap-1">
+          <label className={`w-20 h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${uploadando ? 'border-gray-300 bg-gray-50' : 'border-[#3ca779] bg-[#f0faf5] hover:bg-[#e4f4ed]'}`}>
+            {uploadando ? (
+              <ReloadIcon className="animate-spin size-5 text-gray-400" />
+            ) : (
+              <UploadIcon className="size-5 text-[#3ca779] mb-1" />
+            )}
+            <span className={`text-[10px] font-bold mt-1 ${uploadando ? 'text-gray-400' : 'text-[#3ca779]'}`}>
+              {uploadando ? "Enviando" : "Adicionar"}
+            </span>
+            <input 
+              type="file" 
+              accept=".png,.jpg,.jpeg,.svg,.pdf" 
+              className="hidden" 
+              onChange={handleAdicionarLogo} 
+              disabled={uploadando} 
+            />
+          </label>
+        </div>
       </div>
+
+      {/* Modal de Confirmação Radix (AlertDialog) */}
+      <AlertDialog.Root open={!!logoParaRemover} onOpenChange={(open) => !open && setLogoParaRemover(null)}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="bg-black/50 fixed inset-0 backdrop-blur-sm z-[70]" />
+          <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-2xl shadow-xl w-[90vw] max-w-md z-[80] focus:outline-none">
+            <AlertDialog.Title className="text-lg font-bold text-[#264f41]">
+              Remover Logo
+            </AlertDialog.Title>
+            <AlertDialog.Description className="text-sm text-gray-600 mt-2 mb-6">
+              Tem certeza que deseja remover este logo do pedido do cliente? Esta ação atualizará o sistema.
+            </AlertDialog.Description>
+            <div className="flex justify-end gap-3">
+              <AlertDialog.Cancel asChild>
+                <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">
+                  Cancelar
+                </button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <button 
+                  onClick={handleConfirmarRemocao} 
+                  className="px-4 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition"
+                >
+                  Sim, Remover
+                </button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
   );
 }
@@ -264,8 +420,8 @@ export default function Producao() {
                     dados={pedidos.filter(
                       (p) =>
                         p.status_ped === "Pago Aguardando Produção" ||
-                        p.status_ped === "Aguardando Pagamento" /* ||
-                        p.status_ped === "No Carrinho" */ ||
+                        p.status_ped === "Aguardando Pagamento" ||
+                        p.status_ped === "No Carrinho" ||
                         p.status_ped === "pendente",
                     )}
                     onAbrirDetalhes={handleAbrirPedido}
@@ -432,9 +588,11 @@ export default function Producao() {
                       </p>
 
                       <LogosItem
-                        item={item}
-                        setImagemAberta={setImagemAberta}
-                      />
+  item={item}
+  setImagemAberta={setImagemAberta}
+  setPedidos={setPedidos}
+  setPedidoSelecionado={setPedidoSelecionado}
+/>
                     </div>
 
                     <div className="text-right shrink-0">

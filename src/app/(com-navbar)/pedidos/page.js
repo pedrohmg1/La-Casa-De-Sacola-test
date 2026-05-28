@@ -4,14 +4,18 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Footer from "@/components/layout/Footer";
 import { ShoppingBagIcon, ClockIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import { Pencil2Icon } from "@radix-ui/react-icons";
+import { Pencil2Icon, EnvelopeClosedIcon } from "@radix-ui/react-icons"; // <-- Adicionado ícone de envelope
 import ModalConjuntos from "@/components/pedidos/ModalConjuntos";
+import { toast } from "react-hot-toast"; // <-- Adicionado o toast para feedback
 
 export default function PedidosPage() {
   const [pedidos, setPedidos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [pedidoAberto, setPedidoAberto] = useState(null);
   const [modalConjuntosAberto, setModalConjuntosAberto] = useState(false);
+  
+  // NOVO: Estado para controlar qual botão está carregando o envio do email
+  const [enviandoEmail, setEnviandoEmail] = useState(null); 
 
   useEffect(() => {
     const fetchPedidos = async () => {
@@ -42,6 +46,29 @@ export default function PedidosPage() {
     fetchPedidos();
   }, []);
 
+  // NOVO: Função para disparar a API de email
+  const handleReenviarEmail = async (pedidoId) => {
+    setEnviandoEmail(pedidoId);
+    try {
+      const response = await fetch('/api/reenviar-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedidoId })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Falha ao enviar email');
+
+      toast.success("Email de confirmação enviado para sua caixa de entrada!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao enviar email. Verifique o console.");
+    } finally {
+      setEnviandoEmail(null);
+    }
+  };
+
   // Função auxiliar para formatar o status com cores
   const getStatusBadge = (status) => {
     const styles = {
@@ -62,12 +89,11 @@ export default function PedidosPage() {
             <p className="text-gray-600 text-sm">Acompanhe o histórico de suas encomendas</p>
           </div>
           <button
-          onClick={() => setModalConjuntosAberto(true)}
-          className="flex flex-row items-center gap-2 px-4 py-2 bg-white border border-[#e4f4ed] rounded-2xl text-sm font-bold text-[#264f41] hover:border-[#3ca779] hover:bg-[#f0faf5] transition-all shadow-sm"
-        >
-          Gerenciar Meus Conjuntos <Pencil2Icon className="size-5"/>
-        </button>
-
+            onClick={() => setModalConjuntosAberto(true)}
+            className="flex flex-row items-center gap-2 px-4 py-2 bg-white border border-[#e4f4ed] rounded-2xl text-sm font-bold text-[#264f41] hover:border-[#3ca779] hover:bg-[#f0faf5] transition-all shadow-sm"
+          >
+            Gerenciar Meus Conjuntos <Pencil2Icon className="size-5"/>
+          </button>
         </header>
 
         {carregando ? (
@@ -82,7 +108,7 @@ export default function PedidosPage() {
           <div className="space-y-4">
             {pedidos.map((pedido) => (
               <div key={pedido.id_ped} className="bg-white border border-[#e4f4ed] rounded-2xl p-6 shadow-sm hover:shadow-md transition flex flex-col gap-4">
-                {/* Ajustei o cartão principal para ser um 'flex-col' para que a lista caiba embaixo */}
+                
                 {/* Cabeçalho do cartão */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex gap-4 items-center">
@@ -104,8 +130,18 @@ export default function PedidosPage() {
                     </div>
                   </div>
 
-                  {/* AQUI ESTÁ O FECHAMENTO CORRETO DA DIV DOS BOTÕES */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-end gap-3">
+                    {/* NOVO: Botão de Teste de Email */}
+                    <button 
+                      onClick={() => handleReenviarEmail(pedido.id_ped)}
+                      disabled={enviandoEmail === pedido.id_ped}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#e4f4ed] text-[#3ca779] hover:bg-[#3ca779] hover:text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                      title="Fazer envio do email de confirmação"
+                    >
+                      <EnvelopeClosedIcon className="size-3.5" />
+                      {enviandoEmail === pedido.id_ped ? "Enviando..." : "Enviar E-mail Confirmação"}
+                    </button>
+
                     <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${getStatusBadge(pedido.status_ped)}`}>{pedido.status_ped}</span>
                     <button className="text-sm font-bold text-[#264f41] hover:underline px-2" onClick={() => setPedidoAberto(pedidoAberto === pedido.id_ped ? null : pedido.id_ped)}>
                       {pedidoAberto === pedido.id_ped ? "Ocultar detalhes" : "Ver detalhes"}

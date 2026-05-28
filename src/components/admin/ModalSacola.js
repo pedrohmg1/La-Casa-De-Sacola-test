@@ -177,7 +177,7 @@ export default function ModalSacola({
       type="button"
       onClick={() => onSacolaChange({
         ...sacola,
-        sacola_tamanho: [...(sacola.sacola_tamanho || []), { tam_id: "", preco: "", qtd_minima: "", peso: "", ativo: true }]
+        sacola_tamanho: [...(sacola.sacola_tamanho || []), { tam_id: "", preco: "", qtd_minima: "", peso: "", qtd_estoque: "", ativo: true }]
       })}
       className="flex items-center gap-1 text-xs bg-[#f0faf5] text-[#3ca779] px-3 py-2 rounded-lg font-bold hover:bg-[#c8e3d5] transition border border-[#c8e3d5]"
     >
@@ -186,148 +186,180 @@ export default function ModalSacola({
   </div>
 
   {(sacola.sacola_tamanho || []).map((tamanhoVinculo, index) => (
-    <div key={index} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_auto_auto] gap-3 items-end bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm relative">
-      
-      {/* Select Tamanho */}
-      <div className="flex flex-col gap-1">
-        <label className="font-bold text-xs text-gray-600 flex items-center justify-between">
-          Tamanho
-          <button
-            type="button"
-            onClick={onAbrirGerenciarTamanho}
-            className="text-[#3ca779] hover:text-[#2e8f65] transition"
-            title="Gerenciar Tamanhos Globais"
-          >
-            <GearIcon className="size-3.5" />
-          </button>
-        </label>
-        <Select.Root
-          value={String(tamanhoVinculo.tam_id || "")}
-          onValueChange={(v) => {
-            const novosTamanhos = [...sacola.sacola_tamanho];
-            novosTamanhos[index].tam_id = v;
-            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-          }}
-        >
-          <Select.Trigger className="flex w-full items-center justify-between border border-gray-300 p-2.5 rounded-lg bg-white focus:border-[#5ab58f] outline-none text-sm transition">
-            <Select.Value placeholder="Selecione..." />
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Content className="bg-white rounded-xl shadow-2xl border border-gray-200 z-[120]">
-              <Select.Viewport className="p-2">
-                {opcoesTamanho.map((t) => (
-                  <Select.Item key={t.id_tam} value={String(t.id_tam)} className="p-2.5 rounded-lg outline-none cursor-pointer hover:bg-[#f0faf5] text-sm">
-                    <Select.ItemText>{t.tamanho_tam}</Select.ItemText>
-                  </Select.Item>
-                ))}
-              </Select.Viewport>
-            </Select.Content>
-          </Select.Portal>
-        </Select.Root>
-      </div>
-
-{/* Input Qtd Mínima */}
-<div className="flex flex-col gap-1">
-  <label className="font-bold text-xs text-gray-600">Qtd. Mín</label>
-  <input
-    type="number"
-    min="1"
-    placeholder="Ex: 100"
-    className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
-    value={tamanhoVinculo.qtd_minima ?? ""}
-    onChange={(e) => {
-      const novosTamanhos = [...sacola.sacola_tamanho];
-      novosTamanhos[index].qtd_minima = e.target.value;
-      onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-    }}
-    onKeyDown={(e) => {
-      if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
-    }}
-    required
-  />
-</div>
-
-{/* Input Preço */}
-<div className="flex flex-col gap-1">
-  <label className="font-bold text-xs text-gray-600">Preço (R$)</label>
-  <input
-    type="number"
-    min="0"
-    step="0.01"
-    placeholder="Ex: 1.50"
-    className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
-    value={tamanhoVinculo.preco ?? ""}
-    onChange={(e) => {
-      const novosTamanhos = [...sacola.sacola_tamanho];
-      novosTamanhos[index].preco = e.target.value;
-      onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-    }}
-    onKeyDown={(e) => {
-      if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
-    }}
-    onBlur={(e) => {
-      const valor = parseFloat(e.target.value);
-      if (!isNaN(valor)) {
+<div key={index} className="flex flex-col gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm relative">
+  
+{/* --- LINHA 1: Tamanho, Ativo e Lixeira --- */}
+<div className="flex flex-wrap md:flex-nowrap justify-between items-end gap-4 border-b border-gray-200 pb-3">
+{/* Select Tamanho */}
+<div className="flex flex-col gap-1 w-full md:w-1/2">
+  <label className="font-bold text-xs text-gray-600">Tamanho</label>
+  
+  <div className="flex gap-2">
+    <select
+      className="flex-1 border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm bg-white"
+      value={tamanhoVinculo.tam_id || ""}
+      onChange={(e) => {
         const novosTamanhos = [...sacola.sacola_tamanho];
-        novosTamanhos[index].preco = valor.toFixed(2);
+        novosTamanhos[index].tam_id = e.target.value;
         onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-      }
-    }}
-    required
-  />
+      }}
+      required
+    >
+      <option value="" disabled>Selecione...</option>
+      {opcoesTamanho.map((t) => (
+        <option key={t.id_tam} value={t.id_tam}>
+          {t.tamanho_tam}
+        </option>
+      ))}
+    </select>
+
+    <button
+      type="button"
+      onClick={onAbrirGerenciarTamanho}
+      className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 transition"
+      title="Gerenciar Tamanhos Globais"
+    >
+      <GearIcon />
+    </button>
+  </div>
 </div>
 
-{/* Input Peso */}
-<div className="flex flex-col gap-1">
-  <label className="font-bold text-xs text-gray-600">Peso (g)</label>
-  <input
-    type="number"
-    min="0"
-    step="1"
-    placeholder="Ex: 50"
-    className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
-    value={tamanhoVinculo.peso ?? ""}
-    onChange={(e) => {
-      const novosTamanhos = [...sacola.sacola_tamanho];
-      novosTamanhos[index].peso = e.target.value;
-      onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-    }}
-    onKeyDown={(e) => {
-      if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
-    }}
-    required
-  />
-</div>
-
-      {/* Toggle Ativo */}
-      <div className="flex flex-col gap-1">
-        <label className="font-bold text-xs text-gray-600 text-center">Ativo</label>
-        <button
-          type="button"
-          onClick={() => {
-            const novosTamanhos = [...sacola.sacola_tamanho];
-            novosTamanhos[index].ativo = !novosTamanhos[index].ativo;
-            onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
-          }}
-          className={`p-2.5 rounded-lg border text-sm font-bold transition-all min-w-[3.5rem] ${tamanhoVinculo.ativo !== false ? 'bg-[#e0f5ea] text-[#2e8f65] border-[#c8e3d5]' : 'bg-gray-200 text-gray-500 border-gray-300'}`}
-        >
-          {tamanhoVinculo.ativo !== false ? 'Sim' : 'Não'}
-        </button>
-      </div>
-
-      {/* Remover */}
+  {/* Status e Ações */}
+  <div className="flex items-center gap-4 pb-1">
+    <div className="flex items-center gap-2">
+      <span className="font-bold text-xs text-gray-600">Ativo</span>
       <button
         type="button"
         onClick={() => {
-          const novosTamanhos = sacola.sacola_tamanho.filter((_, i) => i !== index);
+          const novosTamanhos = [...sacola.sacola_tamanho];
+          novosTamanhos[index].ativo = !novosTamanhos[index].ativo;
           onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
         }}
-        className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition self-end border border-red-100 h-[42px]"
-        title="Remover vínculo"
+        className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors ${
+          tamanhoVinculo.ativo !== false ? "bg-[#3ca779]" : "bg-gray-300"
+        }`}
       >
-        <TrashIcon className="size-5" />
+        <div
+          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${
+            tamanhoVinculo.ativo !== false ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
       </button>
     </div>
+
+    <button
+      type="button"
+      onClick={() => {
+        const novosTamanhos = [...sacola.sacola_tamanho];
+        novosTamanhos.splice(index, 1);
+        onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+      }}
+      className="text-red-500 hover:bg-red-100 p-2 rounded-lg transition"
+      title="Remover"
+    >
+      <TrashIcon />
+    </button>
+  </div>
+</div>
+
+{/* --- LINHA 2: Valores (Qtd Mínima, Preço, Peso, Estoque) --- */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-start">
+  {/* Input Qtd Mínima */}
+  <div className="flex flex-col gap-1">
+    <label className="font-bold text-xs text-gray-600">Qtd. Mín</label>
+    <input
+      type="number"
+      min="1"
+      placeholder="Ex: 100"
+      className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+      value={tamanhoVinculo.qtd_minima ?? ""}
+      onChange={(e) => {
+        const novosTamanhos = [...sacola.sacola_tamanho];
+        novosTamanhos[index].qtd_minima = e.target.value;
+        onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+      }}
+      onKeyDown={(e) => {
+        if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+      }}
+      required
+    />
+  </div>
+
+  {/* Input Preço */}
+  <div className="flex flex-col gap-1">
+    <label className="font-bold text-xs text-gray-600">Preço (R$)</label>
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      placeholder="Ex: 1.50"
+      className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+      value={tamanhoVinculo.preco ?? ""}
+      onChange={(e) => {
+        const novosTamanhos = [...sacola.sacola_tamanho];
+        novosTamanhos[index].preco = e.target.value;
+        onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+      }}
+      onKeyDown={(e) => {
+        if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+      }}
+      onBlur={(e) => {
+        const valor = parseFloat(e.target.value);
+        if (!isNaN(valor)) {
+          const novosTamanhos = [...sacola.sacola_tamanho];
+          novosTamanhos[index].preco = valor.toFixed(2);
+          onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+        }
+      }}
+      required
+    />
+  </div>
+
+  {/* Input Peso */}
+  <div className="flex flex-col gap-1">
+    <label className="font-bold text-xs text-gray-600">Peso (g)</label>
+    <input
+      type="number"
+      min="0"
+      step="1"
+      placeholder="Ex: 50"
+      className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+      value={tamanhoVinculo.peso ?? ""}
+      onChange={(e) => {
+        const novosTamanhos = [...sacola.sacola_tamanho];
+        novosTamanhos[index].peso = e.target.value;
+        onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+      }}
+      onKeyDown={(e) => {
+        if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+      }}
+      required
+    />
+  </div>
+
+  {/* Input Estoque */}
+  <div className="flex flex-col gap-1">
+    <label className="font-bold text-xs text-gray-600">Qtnd. Estoque</label>
+    <input
+      type="number"
+      min="0"
+      step="1"
+      placeholder="Ex: 5000"
+      className="border border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#5ab58f] text-sm w-full transition bg-white"
+      value={tamanhoVinculo.qtd_estoque ?? ""}
+      onChange={(e) => {
+        const novosTamanhos = [...sacola.sacola_tamanho];
+        novosTamanhos[index].qtd_estoque = e.target.value;
+        onSacolaChange({ ...sacola, sacola_tamanho: novosTamanhos });
+      }}
+      onKeyDown={(e) => {
+        if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+      }}
+      required
+    />
+  </div>
+</div>
+</div>
   ))}
   
   {(!sacola.sacola_tamanho || sacola.sacola_tamanho.length === 0) && (

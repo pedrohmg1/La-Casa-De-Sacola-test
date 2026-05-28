@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { TrashIcon, PlusIcon, MinusIcon, ChevronLeftIcon } from "@radix-ui/react-icons";
+import { TrashIcon, PlusIcon, MinusIcon, ChevronLeftIcon, ExclamationTriangleIcon  } from "@radix-ui/react-icons";
 import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -293,10 +293,23 @@ export default function CarrinhoPage() {
               {/* Lista de Itens */}
               <div className="lg:col-span-1 flex flex-col gap-4">
                 {cartItems.map((item) => (
+                  <div key={item.id_ten}>
+                                        {/* Bloco de Aviso de Estoque */}
+    {item.quantity > item.qtd_estoque && (
+      <div className="mt-3 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg flex items-center gap-2 font-medium">
+        <ExclamationTriangleIcon className="size-4 shrink-0" />
+        <span>
+          Atenção: A quantidade solicitada ({item.quantity}) excede o estoque disponível ({item.qtd_estoque}). 
+          Este pedido será produzido sob demanda e pode levar mais tempo para entrega.
+        </span>
+      </div>
+    )}
                   <div key={item.id_ten} className="bg-white rounded-3xl p-6 border border-[#e4f4ed] shadow-sm flex items-center gap-6 group hover:border-[#3ca779] transition-all">
+                    
                     <div className="w-24 h-24 bg-[#f0faf5] rounded-2xl flex items-center justify-center text-[#6b9e8a] font-bold text-[10px] text-center p-2 uppercase tracking-tighter">
                       {item.tipo_sac}
                     </div>
+                    
                     
                     <div className="flex-grow">
                       <h3 className="text-lg font-bold text-[#264f41] group-hover:text-[#3ca779] transition-colors">{item.nome_sac}</h3>
@@ -332,6 +345,8 @@ export default function CarrinhoPage() {
                         <TrashIcon /> Remover
                       </button>
                     </div>
+
+                  </div>
                   </div>
                 ))}
               </div>
