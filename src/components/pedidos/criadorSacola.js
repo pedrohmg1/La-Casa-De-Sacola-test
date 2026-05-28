@@ -131,7 +131,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
 
   useEffect(() => {
     if (tamanhoSelecionado) {
-      setQuantidade(q => Math.max(q, tamanhoSelecionado.qtd_minima || 1));
+      setQuantidade(tamanhoSelecionado.qtd_minima || 1);
     }
   }, [tamanhoSelecionado]);
 
@@ -852,7 +852,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
                 setCorSelecionada(null);
                 setNumCoresLogo(1);
                 setQuantidade(1);
-                removerLogo();
+                setLogos([]);
                 setTamanhoSelecionado(null)
               }}
               className="px-6 py-3 rounded-2xl border-2 border-[#3ca779] text-[#3ca779] hover:bg-[#f0faf5] font-bold transition-all"

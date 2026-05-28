@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { toast } from "react-hot-toast";
 
 const CartContext = createContext();
 
@@ -148,19 +149,27 @@ export function CartProvider({ children }) {
   const updateQuantity = async (itemId, quantity) => {
     const item = cartItems.find(i => i.id_ten === itemId);
     if (!item) return;
-
+  
     const minimo = item.quantidademin_sac || 1;
     if (quantity < minimo) return;
-
+  
+    // Atualiza a tela imediatamente
+    setCartItems(prev =>
+      prev.map(i => i.id_ten === itemId ? { ...i, quantity } : i)
+    );
+  
+    // Sincroniza com o banco em paralelo
     const { error } = await supabase
       .from("itens_pedido")
       .update({ quantidade: quantity })
       .eq("id_ten", itemId);
-
-    if (!error) {
+  
+    // Se falhar, reverte para o valor anterior
+    if (error) {
       setCartItems(prev =>
-        prev.map(i => i.id_ten === itemId ? { ...i, quantity } : i)
+        prev.map(i => i.id_ten === itemId ? { ...i, quantity: item.quantity } : i)
       );
+      toast.error("Erro ao atualizar quantidade.");
     }
   };
 

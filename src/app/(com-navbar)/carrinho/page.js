@@ -23,6 +23,8 @@ export default function CarrinhoPage() {
   const [metodoPagamento, setMetodoPagamento] = useState("pix");
   const [enderecosSalvos, setEnderecosSalvos] = useState([]);
   const [mostrarDropdownCep, setMostrarDropdownCep] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
   
   // NOVO: Monitora se o usuário retornou de um cancelamento do Mercado Pago
   useEffect(() => {
@@ -168,7 +170,7 @@ export default function CarrinhoPage() {
       return;
     }
   
-    setLoading(true);
+    setCheckoutLoading(true);
   
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -192,13 +194,26 @@ export default function CarrinhoPage() {
       const dadosPedido = {
         pedidoId: pedidoId,
         metodoPagamento: metodoPagamento,
-        items: cartItems.map((item) => ({
-          id: item.id_sac,
-          title: `${item.nome_sac} - ${item.tamanho_sac}`,
-          unit_price: Number(item.precounitario_sac),
-          quantity: item.quantity,
-          currency_id: 'BRL'
-        }))
+        items: [
+          ...cartItems.map((item) => ({
+            id: item.id_sac,
+            title: `${item.nome_sac} - ${item.tamanho_sac}`,
+            unit_price: Number(
+              metodoPagamento === 'pix'
+                ? (item.precounitario_sac * 0.95).toFixed(2)
+                : item.precounitario_sac
+            ),
+            quantity: item.quantity,
+            currency_id: 'BRL'
+          })),
+          ...(valorFrete > 0 ? [{
+            id: 'frete',
+            title: 'Frete',
+            unit_price: Number(valorFrete),
+            quantity: 1,
+            currency_id: 'BRL'
+          }] : [])
+        ]
       };
   
       const res = await fetch('/api/pagamento', {
@@ -456,7 +471,7 @@ export default function CarrinhoPage() {
                     disabled={loading || cartItems.length === 0 || !tipoFrete || (tipoFrete === "correios" && valorFrete === 0)}
                     className="w-full bg-[#264f41] hover:bg-[#1a362c] text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-[#264f41]/20 mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Processando e Redirecionando..." : "Finalizar Compra"}
+                    {checkoutLoading ? "Processando e Redirecionando..." : "Finalizar Compra"}
                   </button>
                   <p className="text-[12px] text-[#6b9e8a] font-bold uppercase">Pagamento via Mercado Pago</p>
                   </div> 
