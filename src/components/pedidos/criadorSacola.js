@@ -313,7 +313,7 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
         sac_id: sacolaSelecionada.id_sac,
         tamanho_id: tamanhoSelecionado.tam_id,
         quantidade: quantidade,
-        preco: sacolaSelecionada.precounitario_sac * numCoresLogo,
+        preco: tamanhoSelecionado.preco * numCoresLogo,
         cor_id: corSelecionada.id_cor,
         logo_url: logos[0]?.url || null,
         logo_urls: logos.map((l) => l.url).filter(Boolean),
