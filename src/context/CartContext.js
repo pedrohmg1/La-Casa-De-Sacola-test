@@ -141,7 +141,25 @@ export function CartProvider({ children }) {
       .eq("id_ten", itemId);
 
     if (!error) {
-      setCartItems(prev => prev.filter(item => item.id_ten !== itemId));
+      const novaLista = cartItems.filter(item => item.id_ten !== itemId);
+      setCartItems(novaLista);
+
+      // NOVO: Se a lista ficar vazia após a remoção, cancelamos o pedido órfão
+      if (novaLista.length === 0 && pedidoId && userId) {
+        const { error: cancelError } = await supabase
+          .from("pedido")
+          .update({ status_ped: "Cancelado" })
+          .eq("id_ped", pedidoId)
+          .eq("usu_uuid", userId); // Trava de segurança garantindo que é o dono do pedido
+
+        if (!cancelError) {
+          // Limpamos o pedidoId do contexto para que o sistema crie um 
+          // carrinho totalmente novo na próxima vez que ele adicionar uma sacola
+          setPedidoId(null);
+        } else {
+          console.error("Erro ao cancelar o carrinho vazio:", cancelError);
+        }
+      }
     }
   };
 

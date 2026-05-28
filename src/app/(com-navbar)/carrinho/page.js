@@ -46,7 +46,7 @@ export default function CarrinhoPage() {
           .eq("usu_uuid", user.id); // TRAVA: Só atualiza se for do próprio usuário!
 
           if (!error) {
-            toast.error("Pagamento não concluído. O pedido foi marcado como cancelado.");
+            toast.error("Pagamento não concluído. O pedido segue em aberto.");
             // Limpa os parâmetros da URL para o aviso não repetir ao atualizar a página
             router.replace("/carrinho");
           }
