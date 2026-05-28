@@ -287,6 +287,11 @@ export default function CriadorDeSacola({ pedidoId, setPedidoId, userId, temIten
   // Confirma e salva no banco (agora inclui logo_url)
   // -------------------------------------------------------------------------
   const confirmarSacola = async () => {
+    if (!userId) {
+      toast.error("Sessão inválida. Por favor, faça login novamente.");
+      return;
+    }
+    
     setSalvando(true);
     try {
       let idPedido = pedidoId;

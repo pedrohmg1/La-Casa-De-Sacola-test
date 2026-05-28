@@ -34,11 +34,16 @@ export default function CarrinhoPage() {
 
       if (idPedidoCancelado) {
         try {
+          // CORREÇÃO: Busca o usuário logado para garantir a propriedade daquele carrinho
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
           // Atualiza o status_ped para 'cancelado' no Supabase
           const { error } = await supabase
           .from("pedido")
           .update({ status_ped: "No Carrinho" }) // Restaura o carrinho
-          .eq("id_ped", idPedidoCancelado);
+          .eq("id_ped", idPedidoCancelado)
+          .eq("usu_uuid", user.id); // TRAVA: Só atualiza se for do próprio usuário!
 
           if (!error) {
             toast.error("Pagamento não concluído. O pedido foi marcado como cancelado.");
@@ -185,7 +190,8 @@ export default function CarrinhoPage() {
           metodo_pagamento: metodoPagamento,
           cep_entrega: cep,
         })
-        .eq("id_ped", pedidoId);
+        .eq("id_ped", pedidoId)
+        .eq("usu_uuid", user.id);
   
       if (pedidoError) throw new Error(`Erro ao atualizar pedido: ${pedidoError.message}`);
   

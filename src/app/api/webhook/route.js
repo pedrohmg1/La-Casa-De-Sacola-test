@@ -60,12 +60,15 @@ export async function POST(request) {
         const pedidoId = paymentData.external_reference;
       
         // MODIFICADO: Ajustado para usar as colunas exatas do seu banco de dados.
-        // O pedido usa 'usu_uuid' como chave estrangeira para a tabela 'usuario', onde pegamos o 'email_usu'.
-        const { data: pedidoAtual } = await supabaseAdmin
+        const { data: pedidoAtual, error: erroConsulta } = await supabaseAdmin
           .from('pedido')
-          .select('status_ped, usuario:usu_uuid(email_usu)') 
+          .select('status_ped, usuario(email_usu)') 
           .eq('id_ped', pedidoId)
           .single();
+
+        if (erroConsulta) {
+          console.error('Erro ao buscar o pedido e email do cliente:', erroConsulta);
+        }
       
         if (pedidoAtual?.status_ped === 'Pago Aguardando Produção') {
           console.log(`Pedido ${pedidoId} já foi processado, ignorando.`);
