@@ -67,7 +67,7 @@ export default function Hero() {
                 Fazer Pedido Agora
               </Link>
               <Link
-                href="#categorias"
+                href="/catalogo"
                 className="inline-flex items-center justify-center gap-2 border border-[#f4f7f5]/40 text-[#f4f7f5] hover:bg-[#f4f7f5]/10 font-semibold text-base px-8 py-4 rounded-2xl transition-all"
               >
                 Ver Modelos
